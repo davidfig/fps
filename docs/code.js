@@ -7,7 +7,9 @@ const clicked = require('clicked')
 
 const FPS = require('..')
 
-let _renderer, _loop, _ease, _fps, _count
+const STARTING = 500
+
+let _renderer, _loop, _ease, _fps, _count, _meter
 
 function test()
 {
@@ -55,7 +57,7 @@ function count()
     clicked(up, () => change(500))
     _count = document.createElement('div')
     count.appendChild(_count)
-    _count.innerText = 500
+    _count.innerText = STARTING
     const down = document.createElement('div')
     count.appendChild(down)
     down.className = 'fa fa-arrow-down'
@@ -66,18 +68,37 @@ function count()
 
 function meter()
 {
-    const meter = document.createElement('div')
-    document.body.appendChild(meter)
-    meter.style.borderRadius = '10%'
-    meter.style.position = 'fixed'
-    meter.style.right = '1em'
-    meter.style.top = '50%'
-    meter.style.transform = 'translate(0, -50%)'
-    meter.style.background = 'rgba(0, 100, 0, 0.5)'
-    meter.style.color = 'white'
-    meter.style.padding = '0.1em 0.25em'
-    meter.style.fontSize = '2em'
-    meter.style.textAlign = 'center'
+    _meter = document.createElement('div')
+    document.body.appendChild(_meter)
+    _meter.style.borderRadius = '5%'
+    _meter.style.position = 'fixed'
+    _meter.style.left = '1em'
+    _meter.style.top = '50%'
+    _meter.style.transform = 'translate(0, -50%)'
+    _meter.style.background = 'rgba(0, 100, 0, 0.5)'
+    _meter.style.color = 'white'
+    _meter.style.padding = '0.1em 0.5em'
+    _meter.style.fontSize = '2em'
+    _meter.style.textAlign = 'center'
+    _meter.style.cursor = 'pointer'
+    _meter.innerText = 'meter on'
+    clicked(_meter, meterChange)
+}
+
+function meterChange()
+{
+    if (_meter.innerText === 'meter on')
+    {
+        _meter.innerText = 'meter off'
+        _meter.style.background = 'rgba(100, 0, 0, 0.5)'
+        _fps.meter = false
+    }
+    else
+    {
+        _meter.innerText = 'meter on'
+        _meter.style.background = 'rgba(0, 100, 0, 0.5)'
+        _fps.meter = true
+    }
 }
 
 function change(amount)
@@ -117,7 +138,7 @@ function init()
 window.onload = function ()
 {
     init()
-    for (let i = 0; i < 500; i++) box()
+    for (let i = 0; i < STARTING; i++) box()
     count()
     meter()
     test()

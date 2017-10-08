@@ -34,27 +34,42 @@ module.exports = class FPS
      */
     constructor(options)
     {
-        options = options || {}
-        this.tolerance = options.tolerance || 1
-        this.FPS = options.FPS || 60
-        this.meterWidth = options.meterWidth || 100
-        this.meterHeight = options.meterHeight || 25
-        this.meterLineHeight = options.meterLineHeight || 4
-        const div = document.createElement('div')
-        const parent = options.parent || document.body
-        parent.appendChild(div)
-        this.style(div, STYLES, options.styles)
-        this.divFPS(div, options)
-        if (typeof options.meter === 'undefined' || options.meter)
-        {
-            this.divMeter(div, options)
-        }
+        this.options = options || {}
+        this.tolerance = this.options.tolerance || 1
+        this.FPS = this.options.FPS || 60
+        this.meterWidth = this.options.meterWidth || 100
+        this.meterHeight = this.options.meterHeight || 25
+        this.meterLineHeight = this.options.meterLineHeight || 4
+        this.div = document.createElement('div')
+        const parent = this.options.parent || document.body
+        parent.appendChild(this.div)
+        this.style(this.div, STYLES, this.options.styles)
+        this.divFPS()
+        this.meter = typeof this.options.meter === 'undefined' || this.options.meter
         this.lastTime = 0
         this.frameNumber = 0
         this.lastUpdate = 0
         this.lastFPS = '--'
     }
 
+    /**
+     * @type {boolean} meter (the FPS graph) is on or off
+     */
+    get meter()
+    {
+        return this._meter
+    }
+    set meter(value)
+    {
+        if (value)
+        {
+            this.divMeter()
+        }
+        else if (this.meterCanvas)
+        {
+            this.meterCanvas.style.display = 'none'
+        }
+    }
 
     style(div, style1, style2)
     {
@@ -77,8 +92,10 @@ module.exports = class FPS
      * @param {HTMLElement} div
      * @param {object} options (see contructor)
      */
-    divFPS(div, options)
+    divFPS()
     {
+        const div = this.div
+        const options = this.options
         const divFPS = document.createElement('div')
         div.appendChild(divFPS)
         this.fps = document.createElement('span')
@@ -95,15 +112,24 @@ module.exports = class FPS
      * @param {HTMLElement} div
      * @param {object} options (see contructor)
      */
-    divMeter(div, options)
+    divMeter()
     {
-        this.meter = document.createElement('canvas')
-        div.appendChild(this.meter)
-        this.meter.width = this.meterWidth
-        this.meter.height = this.meterHeight
-        this.meter.style.width = div.width + 'px'
-        this.meter.style.height = div.height + 'px'
-        this.style(this.meter, STYLES_METER, options.stylesMeter)
+        const div = this.div
+        const options = this.options
+        if (!this.meterCanvas)
+        {
+            this.meterCanvas = document.createElement('canvas')
+            div.appendChild(this.meterCanvas)
+            this.meterCanvas.width = this.meterWidth
+            this.meterCanvas.height = this.meterHeight
+            this.meterCanvas.style.width = div.width + 'px'
+            this.meterCanvas.style.height = div.height + 'px'
+            this.style(this.meterCanvas, STYLES_METER, options.stylesMeter)
+        }
+        else
+        {
+            this.meterCanvas.style.display = 'block'
+        }
     }
 
     /**
@@ -129,7 +155,7 @@ module.exports = class FPS
             this.frameNumber = 0
         }
         this.fps.innerText = this.lastFPS
-        if (this.meter && this.lastFPS !== '--')
+        if (this.meterCanvas && this.lastFPS !== '--')
         {
             this.meterUpdate(this.lastFPS / this.FPS)
         }
@@ -141,10 +167,10 @@ module.exports = class FPS
         {
             return (x > max) ? max : x
         }
-        const c = this.meter.getContext('2d')
-        const data = c.getImageData(0, 0, this.meter.width, this.meter.height)
+        const c = this.meterCanvas.getContext('2d')
+        const data = c.getImageData(0, 0, this.meterCanvas.width, this.meterCanvas.height)
         c.putImageData(data, -1, 0)
-        c.clearRect(this.meter.width - 1, 0, 1, this.meter.height)
+        c.clearRect(this.meterCanvas.width - 1, 0, 1, this.meterCanvas.height)
         if (percent < 0.5)
         {
             c.fillStyle = '#' + Color.blend(clamp(percent * 2, 1), 0xff0000, 0xffa500).toString(16)
@@ -153,7 +179,7 @@ module.exports = class FPS
         {
             c.fillStyle = '#' + Color.blend(clamp((percent - 0.5) * 2, 1), 0xffa500, 0x00ff00).toString(16)
         }
-        const height = (this.meter.height - this.meterLineHeight) * (1 - percent)
-        c.fillRect(this.meter.width - 1, height, 1, this.meterLineHeight)
+        const height = (this.meterCanvas.height - this.meterLineHeight) * (1 - percent)
+        c.fillRect(this.meterCanvas.width - 1, height, 1, this.meterLineHeight)
     }
 }

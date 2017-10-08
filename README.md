@@ -7,7 +7,7 @@ Yet another FPS indicator with graph
 
 ## rationale
 
-My rationale, sadly, is that the existing npm libraries either did not have live demos or did not support modules. Nothing too special about this package. But it works and it's pretty.  
+My rationale, sadly, is that the existing npm libraries either did not have live demos or did not support modules. Totally worth an afternoon of work in terms of enjoyment.
 
 ## installation
 
@@ -53,6 +53,11 @@ https://davidfig.github.io/fps/
      * @param {string} [options.text=" FPS"] change the text to the right of the FPS
      */
     constructor(options)
+
+    /**
+     * @type {boolean} meter (the FPS graph) is on or off
+     */
+    get meter()
 
     /**
      * call this at the start of the frame to calculate FPS
