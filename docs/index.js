@@ -10,7 +10,7 @@ const FPS = require('..')
 
 const STARTING = 500
 
-let _renderer, _loop, _ease, _fps, _count, _meter
+let _renderer, _loop, _fps, _count, _meter
 
 function test()
 {
@@ -20,7 +20,10 @@ function test()
 function update(elapsed)
 {
     _fps.frame()
-    _ease.loop(elapsed)
+    for (let box of _renderer.stage.children)
+    {
+        box.ease.loop(elapsed)
+    }
     _renderer.render()
 }
 
@@ -32,8 +35,15 @@ function box()
     box.alpha = 0.1
     box.width = box.height = Random.range(10, 100)
     box.position.set(Random.range(-box.width / 2, window.innerWidth + box.width / 2), -box.height / 2)
-    _ease.to(box, { rotation: Random.sign() * 2 * Math.PI }, Random.range(100, 5000), { repeat: true })
+    box.ease = new Ease.list()
+    box.ease.to(box, { rotation: Random.sign() * 2 * Math.PI }, Random.range(100, 5000), { repeat: true })
     target(box)
+}
+
+function target(box)
+{
+    const to = box.ease.to(box, { x: Random.range(-box.width / 2, window.innerWidth + box.width / 2), y: Random.range(-box.width / 2, window.innerHeight + box.height / 2) }, Random.range(1000, 5000), { ease: 'easeInOutSine' })
+    to.on('done', target)
 }
 
 function count()
@@ -122,28 +132,21 @@ function change(amount)
     }
 }
 
-function target(box)
-{
-    const to = _ease.to(box, { x: Random.range(-box.width / 2, window.innerWidth + box.width / 2), y: Random.range(-box.width / 2, window.innerHeight + box.height / 2)}, Random.range(1000, 5000), { ease: 'easeInOutSine' })
-    to.on('done', target)
-}
-
 function init()
 {
     _renderer = new Renderer()
     _loop = new Loop({ pauseOnBlur: true })
     _loop.on('each', update)
-    _ease = new Ease.list()
+    _loop.start()
 }
 
 window.onload = function ()
 {
+    test()
     init()
     for (let i = 0; i < STARTING; i++) box()
     count()
     meter()
-    test()
-    _loop.start()
 
     require('fork-me-github')('https://github.com/davidfig/loop')
     require('./highlight')()
