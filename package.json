@@ -39,6 +39,6 @@
         "clicked": "^1.3.0"
     },
     "dependencies": {
-        "yy-color": "^1.0.7"
+        "tinycolor2": "^1.4.1"
     }
 }

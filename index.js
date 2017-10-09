@@ -1,4 +1,4 @@
-const Color = require('yy-color')
+const Color = require('tinycolor2')
 
 const STYLES = {
     'position': 'fixed',
@@ -163,21 +163,17 @@ module.exports = class FPS
 
     meterUpdate(percent)
     {
-        function clamp(x, max)
-        {
-            return (x > max) ? max : x
-        }
         const c = this.meterCanvas.getContext('2d')
         const data = c.getImageData(0, 0, this.meterCanvas.width, this.meterCanvas.height)
         c.putImageData(data, -1, 0)
         c.clearRect(this.meterCanvas.width - 1, 0, 1, this.meterCanvas.height)
         if (percent < 0.5)
         {
-            c.fillStyle = '#' + Color.blend(clamp(percent * 2, 1), 0xff0000, 0xffa500).toString(16)
+            c.fillStyle = Color.mix('#ff0000', '0xffa500', percent * 200).toHexString()
         }
         else
         {
-            c.fillStyle = '#' + Color.blend(clamp((percent - 0.5) * 2, 1), 0xffa500, 0x00ff00).toString(16)
+            c.fillStyle = Color.mix('#ffa500', '#00ff00', (percent - 0.5) * 200).toHexString()
         }
         const height = (this.meterCanvas.height - this.meterLineHeight) * (1 - percent)
         c.fillRect(this.meterCanvas.width - 1, height, 1, this.meterLineHeight)
