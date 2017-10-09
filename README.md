@@ -41,6 +41,7 @@ https://davidfig.github.io/fps/
     /**
      * @param {object} [options]
      * @param {boolean} [options.meter=true] include a meter with the FPS
+     * @param {string} [options.side=bottom-right] include any combination of left/right and top/bottom
      * @param {number} [options.FPS=60] desired FPS
      * @param {number} [options.tolerance=1] minimum tolerance for fluctuations in FPS number
      * @param {number} [options.meterWidth=100] width of meter div
@@ -53,6 +54,11 @@ https://davidfig.github.io/fps/
      * @param {string} [options.text=" FPS"] change the text to the right of the FPS
      */
     constructor(options)
+
+    /**
+     * remove meter from DOM
+     */
+    remove()
 
     /**
      * @type {boolean} meter (the FPS graph) is on or off

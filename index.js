@@ -2,8 +2,6 @@ const Color = require('tinycolor2')
 
 const STYLES = {
     'position': 'fixed',
-    'right': 0,
-    'bottom': 0,
     'background': 'rgba(0, 0, 0, 0.5)',
     'color': 'white',
     'zIndex': 1001
@@ -21,6 +19,7 @@ module.exports = class FPS
     /**
      * @param {object} [options]
      * @param {boolean} [options.meter=true] include a meter with the FPS
+     * @param {string} [options.side=bottom-right] include any combination of left/right and top/bottom
      * @param {number} [options.FPS=60] desired FPS
      * @param {number} [options.tolerance=1] minimum tolerance for fluctuations in FPS number
      * @param {number} [options.meterWidth=100] width of meter div
@@ -41,8 +40,9 @@ module.exports = class FPS
         this.meterHeight = this.options.meterHeight || 25
         this.meterLineHeight = this.options.meterLineHeight || 4
         this.div = document.createElement('div')
-        const parent = this.options.parent || document.body
-        parent.appendChild(this.div)
+        this.parent = this.options.parent || document.body
+        this.parent.appendChild(this.div)
+        this.side(options)
         this.style(this.div, STYLES, this.options.styles)
         this.divFPS()
         this.meter = typeof this.options.meter === 'undefined' || this.options.meter
@@ -50,6 +50,14 @@ module.exports = class FPS
         this.frameNumber = 0
         this.lastUpdate = 0
         this.lastFPS = '--'
+    }
+
+    /**
+     * remove meter from DOM
+     */
+    remove()
+    {
+        this.div.remove()
     }
 
     /**
@@ -177,5 +185,38 @@ module.exports = class FPS
         }
         const height = (this.meterCanvas.height - this.meterLineHeight) * (1 - percent)
         c.fillRect(this.meterCanvas.width - 1, height, 1, this.meterLineHeight)
+    }
+
+    side(options)
+    {
+        if (options.side)
+        {
+            options.side = options.side.toLowerCase()
+            if (options.side.indexOf('left') !== -1)
+            {
+                STYLES['left'] = 0
+                delete STYLES['right']
+            }
+            else
+            {
+                STYLES['right'] = 0
+                delete STYLES['left']
+            }
+            if (options.side.indexOf('top') !== -1)
+            {
+                STYLES['top'] = 0
+                delete STYLES['bottom']
+            }
+            else
+            {
+                STYLES['bottom'] = 0
+                delete STYLES['top']
+            }
+        }
+        else
+        {
+            STYLES['right'] = 0
+            STYLES['bottom'] = 0
+        }
     }
 }

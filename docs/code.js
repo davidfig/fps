@@ -9,7 +9,7 @@ const FPS = require('..')
 
 const STARTING = 500
 
-let _renderer, _loop, _fps, _count, _meter
+let _renderer, _loop, _fps, _count, _meter, _move, _place
 
 function test()
 {
@@ -84,7 +84,7 @@ function meter()
     _meter.style.position = 'fixed'
     _meter.style.left = '1em'
     _meter.style.top = '50%'
-    _meter.style.transform = 'translate(0, -50%)'
+    _meter.style.transform = 'translate(0, -60%)'
     _meter.style.background = 'rgba(0, 100, 0, 0.5)'
     _meter.style.color = 'white'
     _meter.style.padding = '0.1em 0.5em'
@@ -109,6 +109,49 @@ function meterChange()
         _meter.style.background = 'rgba(0, 100, 0, 0.5)'
         _fps.meter = true
     }
+}
+
+function move()
+{
+    _place = 'bottom-right'
+    _move = document.createElement('div')
+    document.body.appendChild(_move)
+    _move.style.borderRadius = '5%'
+    _move.style.position = 'fixed'
+    _move.style.left = '1em'
+    _move.style.top = '50%'
+    _move.style.transform = 'translate(0, 60%)'
+    _move.style.background = 'rgba(0, 100, 0, 0.5)'
+    _move.style.color = 'white'
+    _move.style.padding = '0.1em 0.5em'
+    _move.style.fontSize = '2em'
+    _move.style.textAlign = 'center'
+    _move.style.cursor = 'pointer'
+    _move.innerText = 'move'
+    clicked(_move, moveChange)
+}
+
+function moveChange()
+{
+    let change
+    switch (_place)
+    {
+        case 'bottom-right':
+            _place = 'bottom-left'
+            break
+        case 'bottom-left':
+            _place = 'top-left'
+            break
+        case 'top-left':
+            _place = 'top-right'
+            break
+        case 'top-right':
+            _place = 'bottom-right'
+            break
+    }
+    const meter = _fps.meter
+    _fps.remove()
+    _fps = new FPS({ meter, side: _place })
 }
 
 function change(amount)
@@ -146,7 +189,7 @@ window.onload = function ()
     for (let i = 0; i < STARTING; i++) box()
     count()
     meter()
-
+    move()
     require('fork-me-github')('https://github.com/davidfig/loop')
     require('./highlight')()
 }
