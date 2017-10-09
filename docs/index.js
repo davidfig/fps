@@ -256,7 +256,7 @@ module.exports = class FPS
         this.div = document.createElement('div')
         this.parent = this.options.parent || document.body
         this.parent.appendChild(this.div)
-        this.side(options)
+        this.side(this.options)
         this.style(this.div, STYLES, this.options.styles)
         this.divFPS()
         this.meter = typeof this.options.meter === 'undefined' || this.options.meter
