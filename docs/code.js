@@ -13,7 +13,7 @@ let _renderer, _loop, _fps, _count, _meter, _move, _place
 
 function test()
 {
-    _fps = new FPS({ meter: true })
+    _fps = new FPS()
 }
 
 function update(elapsed)
@@ -133,7 +133,6 @@ function move()
 
 function moveChange()
 {
-    let change
     switch (_place)
     {
         case 'bottom-right':
