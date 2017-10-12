@@ -154,7 +154,7 @@ module.exports = class FPS
             if (this.lastTime !== 0)
             {
                 this.lastFPS = Math.floor(this.frameNumber / (currentTime / 1000))
-                if (this.lastFPS >= FPS - this.tolerance && this.lastFPS <= FPS + this.tolerance)
+                if (this.lastFPS >= this.FPS - this.tolerance && this.lastFPS <= this.FPS + this.tolerance)
                 {
                     this.lastFPS = this.FPS
                 }
