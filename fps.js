@@ -46,8 +46,6 @@ module.exports = class FPS
         this.frameNumber = 0
         this.lastUpdate = 0
         this.lastFPS = '--'
-        const text = new Counter()
-        text.log('hello')
     }
 
     /**
