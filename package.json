@@ -1,6 +1,6 @@
 {
     "name": "yy-fps",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "Yet another FPS indicator with graph",
     "main": "fps.js",
     "directories": {
