@@ -1,6 +1,5 @@
 const Renderer = require('yy-renderer')
 const Random = require('yy-random')
-const Loop = require('yy-loop')
 const Ease = require('pixi-ease')
 const PIXI = require('pixi.js')
 const clicked = require('clicked')
@@ -9,7 +8,7 @@ const FPS = require('..')
 
 const STARTING = 500
 
-let _renderer, _loop, _fps, _count, _meter, _move, _place
+let _renderer, _fps, _count, _meter, _move, _place
 
 function test()
 {
@@ -21,7 +20,7 @@ function update(elapsed)
     _fps.frame()
     for (let box of _renderer.stage.children)
     {
-        box.ease.loop(elapsed)
+        box.ease.update(elapsed)
     }
     _renderer.render()
 }
@@ -175,10 +174,9 @@ function change(amount)
 
 function init()
 {
-    _renderer = new Renderer()
-    _loop = new Loop({ pauseOnBlur: true })
-    _loop.on('each', update)
-    _loop.start()
+    _renderer = new Renderer({ pauseOnBlur: true })
+    _renderer.interval(update)
+    _renderer.start()
 }
 
 window.onload = function ()
