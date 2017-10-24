@@ -260,6 +260,19 @@ module.exports = class FPS
     }
 
     /**
+     * change desired FPS
+     * @type {number}
+     */
+    get fps()
+    {
+        return this.FPS
+    }
+    set fps(value)
+    {
+        this.FPS = value
+    }
+
+    /**
      * remove meter from DOM
      */
     remove()
@@ -313,8 +326,8 @@ module.exports = class FPS
         const options = this.options
         const divFPS = document.createElement('div')
         div.appendChild(divFPS)
-        this.fps = document.createElement('span')
-        divFPS.appendChild(this.fps)
+        this.fpsSpan = document.createElement('span')
+        divFPS.appendChild(this.fpsSpan)
         const span = document.createElement('span')
         divFPS.appendChild(span)
         span.innerText = typeof options.text !== 'undefined' ? options.text : ' FPS'
@@ -369,7 +382,7 @@ module.exports = class FPS
             this.lastTime = performance.now()
             this.frameNumber = 0
         }
-        this.fps.innerText = this.lastFPS
+        this.fpsSpan.innerText = this.lastFPS
         if (this.meterCanvas && this.lastFPS !== '--')
         {
             this.meterUpdate(this.lastFPS / this.FPS)
