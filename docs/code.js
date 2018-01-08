@@ -6,9 +6,9 @@ const clicked = require('clicked')
 
 const FPS = require('..')
 
-const STARTING = 500
+const STARTING = 300
 
-let _renderer, _fps, _count, _meter, _move, _place
+let _renderer, _fps, _count, _meter, _move, _place, _ease
 
 function test()
 {
@@ -18,11 +18,8 @@ function test()
 function update(elapsed)
 {
     _fps.frame()
-    for (let box of _renderer.stage.children)
-    {
-        box.ease.update(elapsed)
-    }
-    _renderer.render()
+    _ease.update(elapsed)
+    _renderer.dirty = true
 }
 
 function box()
@@ -32,16 +29,15 @@ function box()
     box.tint = Random.color()
     box.alpha = 0.1
     box.width = box.height = Random.range(10, 100)
-    box.position.set(Random.range(-box.width / 2, window.innerWidth + box.width / 2), -box.height / 2)
-    box.ease = new Ease.list()
-    box.ease.to(box, { rotation: Random.sign() * 2 * Math.PI }, Random.range(100, 5000), { repeat: true })
+    box.position.set(Random.range(-box.width / 2, window.innerWidth + box.width / 2), 100)//-box.height / 2)
+    _ease.to(box, { rotation: Random.sign() * 2 * Math.PI }, Random.range(100, 5000), { repeat: true })
     target(box)
 }
 
 function target(box)
 {
-    const to = box.ease.to(box, { x: Random.range(-box.width / 2, window.innerWidth + box.width / 2), y: Random.range(-box.width / 2, window.innerHeight + box.height / 2) }, Random.range(1000, 5000), { ease: 'easeInOutSine' })
-    to.on('done', target)
+    const to = _ease.to(box, { x: Random.range(-box.width / 2, window.innerWidth + box.width / 2), y: Random.range(-box.width / 2, window.innerHeight + box.height / 2) }, Random.range(1000, 5000), { ease: 'easeInOutSine', reverse: true, repeat: true })
+    // to.once('done', () => target(box))
 }
 
 function count()
@@ -174,19 +170,45 @@ function change(amount)
 
 function init()
 {
-    _renderer = new Renderer({ pauseOnBlur: true })
-    _renderer.interval(update)
-    _renderer.start()
+    _ease = new Ease.list()
+    _renderer = new Renderer({ pauseOnBlur: true, turnOffTicker: true, turnOffInteraction: true, autoresize: true })
+    // _renderer.loop.add(update)
+    // _renderer.start()
+    loop()
+}
+
+let last
+
+function init2()
+{
+    _ease = new Ease.list()
+    _renderer = new PIXI.Application({ transparent: true, width: window.innerWidth, height: window.innerHeight })
+    _renderer.view.style.position = 'fixed'
+    document.body.appendChild(_renderer.view)
+    last = performance.now()
+    loop()
+}
+
+function loop()
+{
+    const now = performance.now()
+    const elapsed = now - last
+    last = now
+    update(elapsed)
+    _renderer.render()
+    requestAnimationFrame(loop)
 }
 
 window.onload = function ()
 {
     test()
-    init()
+    // init()
+    init2()
     for (let i = 0; i < STARTING; i++) box()
     count()
     meter()
     move()
+
     require('fork-me-github')('https://github.com/davidfig/loop')
     require('./highlight')()
 }

@@ -7,9 +7,9 @@ const clicked = require('clicked')
 
 const FPS = require('..')
 
-const STARTING = 500
+const STARTING = 300
 
-let _renderer, _fps, _count, _meter, _move, _place
+let _renderer, _fps, _count, _meter, _move, _place, _ease
 
 function test()
 {
@@ -19,11 +19,8 @@ function test()
 function update(elapsed)
 {
     _fps.frame()
-    for (let box of _renderer.stage.children)
-    {
-        box.ease.update(elapsed)
-    }
-    _renderer.render()
+    _ease.update(elapsed)
+    _renderer.dirty = true
 }
 
 function box()
@@ -33,16 +30,15 @@ function box()
     box.tint = Random.color()
     box.alpha = 0.1
     box.width = box.height = Random.range(10, 100)
-    box.position.set(Random.range(-box.width / 2, window.innerWidth + box.width / 2), -box.height / 2)
-    box.ease = new Ease.list()
-    box.ease.to(box, { rotation: Random.sign() * 2 * Math.PI }, Random.range(100, 5000), { repeat: true })
+    box.position.set(Random.range(-box.width / 2, window.innerWidth + box.width / 2), 100)//-box.height / 2)
+    _ease.to(box, { rotation: Random.sign() * 2 * Math.PI }, Random.range(100, 5000), { repeat: true })
     target(box)
 }
 
 function target(box)
 {
-    const to = box.ease.to(box, { x: Random.range(-box.width / 2, window.innerWidth + box.width / 2), y: Random.range(-box.width / 2, window.innerHeight + box.height / 2) }, Random.range(1000, 5000), { ease: 'easeInOutSine' })
-    to.on('done', target)
+    const to = _ease.to(box, { x: Random.range(-box.width / 2, window.innerWidth + box.width / 2), y: Random.range(-box.width / 2, window.innerHeight + box.height / 2) }, Random.range(1000, 5000), { ease: 'easeInOutSine', reverse: true, repeat: true })
+    // to.once('done', () => target(box))
 }
 
 function count()
@@ -175,23 +171,49 @@ function change(amount)
 
 function init()
 {
-    _renderer = new Renderer({ pauseOnBlur: true })
-    _renderer.interval(update)
-    _renderer.start()
+    _ease = new Ease.list()
+    _renderer = new Renderer({ pauseOnBlur: true, turnOffTicker: true, turnOffInteraction: true, autoresize: true })
+    // _renderer.loop.add(update)
+    // _renderer.start()
+    loop()
+}
+
+let last
+
+function init2()
+{
+    _ease = new Ease.list()
+    _renderer = new PIXI.Application({ transparent: true, width: window.innerWidth, height: window.innerHeight })
+    _renderer.view.style.position = 'fixed'
+    document.body.appendChild(_renderer.view)
+    last = performance.now()
+    loop()
+}
+
+function loop()
+{
+    const now = performance.now()
+    const elapsed = now - last
+    last = now
+    update(elapsed)
+    _renderer.render()
+    requestAnimationFrame(loop)
 }
 
 window.onload = function ()
 {
     test()
-    init()
+    // init()
+    init2()
     for (let i = 0; i < STARTING; i++) box()
     count()
     meter()
     move()
+
     require('fork-me-github')('https://github.com/davidfig/loop')
     require('./highlight')()
 }
-},{"..":3,"./highlight":2,"clicked":5,"fork-me-github":9,"pixi-ease":193,"pixi.js":336,"yy-random":397,"yy-renderer":398}],2:[function(require,module,exports){
+},{"..":3,"./highlight":2,"clicked":5,"fork-me-github":9,"pixi-ease":193,"pixi.js":336,"yy-random":391,"yy-renderer":395}],2:[function(require,module,exports){
 // shows the code in the demo
 module.exports = function highlight()
 {
@@ -209,23 +231,27 @@ module.exports = function highlight()
 // for eslint
 /* globals window, XMLHttpRequest, document */
 },{"highlight.js":11}],3:[function(require,module,exports){
-const Color = require('tinycolor2')
-const Counter = require('yy-counter')
+'use strict';
 
-const STYLES = {
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Color = require('tinycolor2');
+var Counter = require('yy-counter');
+
+var STYLES = {
     'background': 'rgba(0, 0, 0, 0.5)',
-    'color': 'white',
-}
+    'color': 'white'
+};
 
-const STYLES_FPS = {
+var STYLES_FPS = {
     'padding': '0.1em 0.5em'
-}
+};
 
-const STYLES_METER = {
-}
+var STYLES_METER = {};
 
-module.exports = class FPS
-{
+module.exports = function () {
     /**
      * @param {object} [options]
      * @param {boolean} [options.meter=true] include a meter with the FPS
@@ -240,206 +266,197 @@ module.exports = class FPS
      * @param {styles[]} [options.stylesMeter] CSS styles to apply to the FPS meter (in javascript format)
      * @param {string} [options.text=" FPS"] change the text to the right of the FPS
      */
-    constructor(options)
-    {
-        this.options = options || {}
-        this.tolerance = this.options.tolerance || 1
-        this.FPS = this.options.FPS || 60
-        this.meterWidth = this.options.meterWidth || 100
-        this.meterHeight = this.options.meterHeight || 25
-        this.meterLineHeight = this.options.meterLineHeight || 4
-        this.div = document.createElement('div')
-        Counter.findParent(this.options.side || 'bottom-right').appendChild(this.div)
-        this.style(this.div, STYLES, this.options.styles)
-        this.divFPS()
-        this.meter = typeof this.options.meter === 'undefined' || this.options.meter
-        this.lastTime = 0
-        this.frameNumber = 0
-        this.lastUpdate = 0
-        this.lastFPS = '--'
+    function FPS(options) {
+        _classCallCheck(this, FPS);
+
+        this.options = options || {};
+        this.tolerance = this.options.tolerance || 1;
+        this.FPS = this.options.FPS || 60;
+        this.meterWidth = this.options.meterWidth || 100;
+        this.meterHeight = this.options.meterHeight || 25;
+        this.meterLineHeight = this.options.meterLineHeight || 4;
+        this.div = document.createElement('div');
+        Counter.findParent(this.options.side || 'bottom-right').appendChild(this.div);
+        this.style(this.div, STYLES, this.options.styles);
+        this.divFPS();
+        this.meter = typeof this.options.meter === 'undefined' || this.options.meter;
+        this.lastTime = 0;
+        this.frameNumber = 0;
+        this.lastUpdate = 0;
+        this.lastFPS = '--';
     }
 
     /**
      * change desired FPS
      * @type {number}
      */
-    get fps()
-    {
-        return this.FPS
-    }
-    set fps(value)
-    {
-        this.FPS = value
-    }
 
-    /**
-     * remove meter from DOM
-     */
-    remove()
-    {
-        this.div.remove()
-    }
 
-    /**
-     * @type {boolean} meter (the FPS graph) is on or off
-     */
-    get meter()
-    {
-        return this._meter
-    }
-    set meter(value)
-    {
-        if (value)
-        {
-            this.divMeter()
-        }
-        else if (this.meterCanvas)
-        {
-            this.meterCanvas.style.display = 'none'
-        }
-    }
+    _createClass(FPS, [{
+        key: 'remove',
 
-    style(div, style1, style2)
-    {
-        for (let style in style1)
-        {
-            div.style[style] = style1[style]
+
+        /**
+         * remove meter from DOM
+         */
+        value: function remove() {
+            this.div.remove();
         }
-        if (style2)
-        {
-            for (let style in style2)
-            {
-                div.style[style] = style2[style]
+
+        /**
+         * @type {boolean} meter (the FPS graph) is on or off
+         */
+
+    }, {
+        key: 'style',
+        value: function style(div, style1, style2) {
+            for (var style in style1) {
+                div.style[style] = style1[style];
             }
-        }
-    }
-
-    /**
-     * create div for text FPS
-     * @private
-     * @param {HTMLElement} div
-     * @param {object} options (see contructor)
-     */
-    divFPS()
-    {
-        const div = this.div
-        const options = this.options
-        const divFPS = document.createElement('div')
-        div.appendChild(divFPS)
-        this.fpsSpan = document.createElement('span')
-        divFPS.appendChild(this.fpsSpan)
-        const span = document.createElement('span')
-        divFPS.appendChild(span)
-        span.innerText = typeof options.text !== 'undefined' ? options.text : ' FPS'
-        this.style(div, STYLES_FPS, options.stylesFPS)
-    }
-
-    /**
-     * create div for FPS meter
-     * @private
-     * @param {HTMLElement} div
-     * @param {object} options (see contructor)
-     */
-    divMeter()
-    {
-        const div = this.div
-        const options = this.options
-        if (!this.meterCanvas)
-        {
-            this.meterCanvas = document.createElement('canvas')
-            div.appendChild(this.meterCanvas)
-            this.meterCanvas.width = this.meterWidth
-            this.meterCanvas.height = this.meterHeight
-            this.meterCanvas.style.width = div.width + 'px'
-            this.meterCanvas.style.height = div.height + 'px'
-            this.style(this.meterCanvas, STYLES_METER, options.stylesMeter)
-        }
-        else
-        {
-            this.meterCanvas.style.display = 'block'
-        }
-    }
-
-    /**
-     * call this at the start of the frame to calculate FPS
-     */
-    frame()
-    {
-        this.frameNumber++
-        const currentTime = performance.now() - this.lastTime
-
-        // skip large differences to remove garbage
-        if (currentTime > 500)
-        {
-            if (this.lastTime !== 0)
-            {
-                this.lastFPS = Math.floor(this.frameNumber / (currentTime / 1000))
-                if (this.lastFPS >= this.FPS - this.tolerance && this.lastFPS <= this.FPS + this.tolerance)
-                {
-                    this.lastFPS = this.FPS
+            if (style2) {
+                for (var _style in style2) {
+                    div.style[_style] = style2[_style];
                 }
             }
-            this.lastTime = performance.now()
-            this.frameNumber = 0
         }
-        this.fpsSpan.innerText = this.lastFPS
-        if (this.meterCanvas && this.lastFPS !== '--')
-        {
-            this.meterUpdate(this.lastFPS / this.FPS)
-        }
-    }
 
-    meterUpdate(percent)
-    {
-        const c = this.meterCanvas.getContext('2d')
-        const data = c.getImageData(0, 0, this.meterCanvas.width, this.meterCanvas.height)
-        c.putImageData(data, -1, 0)
-        c.clearRect(this.meterCanvas.width - 1, 0, 1, this.meterCanvas.height)
-        if (percent < 0.5)
-        {
-            c.fillStyle = Color.mix('#ff0000', '0xffa500', percent * 200).toHexString()
-        }
-        else
-        {
-            c.fillStyle = Color.mix('#ffa500', '#00ff00', (percent - 0.5) * 200).toHexString()
-        }
-        const height = (this.meterCanvas.height - this.meterLineHeight) * (1 - percent)
-        c.fillRect(this.meterCanvas.width - 1, height, 1, this.meterLineHeight)
-    }
+        /**
+         * create div for text FPS
+         * @private
+         * @param {HTMLElement} div
+         * @param {object} options (see contructor)
+         */
 
-    side(options)
-    {
-        if (options.side)
-        {
-            options.side = options.side.toLowerCase()
-            if (options.side.indexOf('left') !== -1)
-            {
-                STYLES['left'] = 0
-                delete STYLES['right']
-            }
-            else
-            {
-                STYLES['right'] = 0
-                delete STYLES['left']
-            }
-            if (options.side.indexOf('top') !== -1)
-            {
-                STYLES['top'] = 0
-                delete STYLES['bottom']
-            }
-            else
-            {
-                STYLES['bottom'] = 0
-                delete STYLES['top']
+    }, {
+        key: 'divFPS',
+        value: function divFPS() {
+            var div = this.div;
+            var options = this.options;
+            var divFPS = document.createElement('div');
+            div.appendChild(divFPS);
+            this.fpsSpan = document.createElement('span');
+            divFPS.appendChild(this.fpsSpan);
+            var span = document.createElement('span');
+            divFPS.appendChild(span);
+            span.innerText = typeof options.text !== 'undefined' ? options.text : ' FPS';
+            this.style(div, STYLES_FPS, options.stylesFPS);
+        }
+
+        /**
+         * create div for FPS meter
+         * @private
+         * @param {HTMLElement} div
+         * @param {object} options (see contructor)
+         */
+
+    }, {
+        key: 'divMeter',
+        value: function divMeter() {
+            var div = this.div;
+            var options = this.options;
+            if (!this.meterCanvas) {
+                this.meterCanvas = document.createElement('canvas');
+                div.appendChild(this.meterCanvas);
+                this.meterCanvas.width = this.meterWidth;
+                this.meterCanvas.height = this.meterHeight;
+                this.meterCanvas.style.width = div.width + 'px';
+                this.meterCanvas.style.height = div.height + 'px';
+                this.style(this.meterCanvas, STYLES_METER, options.stylesMeter);
+            } else {
+                this.meterCanvas.style.display = 'block';
             }
         }
-        else
-        {
-            STYLES['right'] = 0
-            STYLES['bottom'] = 0
+
+        /**
+         * call this at the start of the frame to calculate FPS
+         */
+
+    }, {
+        key: 'frame',
+        value: function frame() {
+            this.frameNumber++;
+            var currentTime = performance.now() - this.lastTime;
+
+            // skip large differences to remove garbage
+            if (currentTime > 500) {
+                if (this.lastTime !== 0) {
+                    this.lastFPS = Math.floor(this.frameNumber / (currentTime / 1000));
+                    if (this.lastFPS >= this.FPS - this.tolerance && this.lastFPS <= this.FPS + this.tolerance) {
+                        this.lastFPS = this.FPS;
+                    }
+                }
+                this.lastTime = performance.now();
+                this.frameNumber = 0;
+            }
+            this.fpsSpan.innerText = this.lastFPS;
+            if (this.meterCanvas && this.lastFPS !== '--') {
+                this.meterUpdate(this.lastFPS / this.FPS);
+            }
         }
-    }
-}
+    }, {
+        key: 'meterUpdate',
+        value: function meterUpdate(percent) {
+            var c = this.meterCanvas.getContext('2d');
+            var data = c.getImageData(0, 0, this.meterCanvas.width, this.meterCanvas.height);
+            c.putImageData(data, -1, 0);
+            c.clearRect(this.meterCanvas.width - 1, 0, 1, this.meterCanvas.height);
+            if (percent < 0.5) {
+                c.fillStyle = Color.mix('#ff0000', '0xffa500', percent * 200).toHexString();
+            } else {
+                c.fillStyle = Color.mix('#ffa500', '#00ff00', (percent - 0.5) * 200).toHexString();
+            }
+            var height = (this.meterCanvas.height - this.meterLineHeight) * (1 - percent);
+            c.fillRect(this.meterCanvas.width - 1, height, 1, this.meterLineHeight);
+        }
+    }, {
+        key: 'side',
+        value: function side(options) {
+            if (options.side) {
+                options.side = options.side.toLowerCase();
+                if (options.side.indexOf('left') !== -1) {
+                    STYLES['left'] = 0;
+                    delete STYLES['right'];
+                } else {
+                    STYLES['right'] = 0;
+                    delete STYLES['left'];
+                }
+                if (options.side.indexOf('top') !== -1) {
+                    STYLES['top'] = 0;
+                    delete STYLES['bottom'];
+                } else {
+                    STYLES['bottom'] = 0;
+                    delete STYLES['top'];
+                }
+            } else {
+                STYLES['right'] = 0;
+                STYLES['bottom'] = 0;
+            }
+        }
+    }, {
+        key: 'fps',
+        get: function get() {
+            return this.FPS;
+        },
+        set: function set(value) {
+            this.FPS = value;
+        }
+    }, {
+        key: 'meter',
+        get: function get() {
+            return this._meter;
+        },
+        set: function set(value) {
+            if (value) {
+                this.divMeter();
+            } else if (this.meterCanvas) {
+                this.meterCanvas.style.display = 'none';
+            }
+        }
+    }]);
+
+    return FPS;
+}();
+
 },{"tinycolor2":386,"yy-counter":389}],4:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
@@ -19437,9 +19454,7 @@ module.exports = {
     angle: require('./src/angle'),
     target: require('./src/target'),
     movie: require('./src/movie'),
-    load: require('./src/load'),
-
-    default: new list()
+    load: require('./src/load')
 }
 },{"./src/angle":194,"./src/face":195,"./src/list":196,"./src/load":197,"./src/movie":198,"./src/shake":199,"./src/target":200,"./src/tint":201,"./src/to":202,"./src/wait":203}],194:[function(require,module,exports){
 const wait = require('./wait')
@@ -19473,10 +19488,6 @@ module.exports = class angle extends wait
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
         const save = super.save()
         save.angle = this.angle
         save.speed = this.speed
@@ -19583,7 +19594,8 @@ module.exports = class face extends wait
     }
 }
 },{"./wait":203,"yy-angle":387}],196:[function(require,module,exports){
-const Loop = require('yy-loop')
+const PIXI = require('pixi.js')
+const Events = require('eventemitter3')
 
 const Angle = require('./angle')
 const Face = require('./face')
@@ -19595,45 +19607,59 @@ const Tint = require('./tint')
 const To = require('./to')
 const Wait = require('./wait')
 
-/** Helper list for multiple animations */
-module.exports = class List extends Loop
+module.exports = class List extends Events
 {
     /**
-     * @param [options]
-     * @param {number} [options.maxFrameTime=1000 / 60] maximum time in milliseconds for a frame
-     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
+     * Helper list for multiple animations
+     * @param {object} [options]
+     * @param {boolean} [options.noTicker] don't add the update function to PIXI.ticker
+     * @param {PIXI.ticker} [options.ticker=PIXI.ticker.shared] use this PIXI.ticker for the list
+     *
      * @event List#done(List) final animation completed in the list
-     * @event List#each(elapsed, List) each update
+     * @event List#each(elapsed, List) each update after eases are updated
      */
     constructor(options)
     {
         options = options || {}
-        super(options)
+        super()
+        if (!options.noTicker)
+        {
+            const ticker = options.ticker || PIXI.ticker.shared
+            ticker.add(() => this.update(ticker.elapsedMS))
+        }
+        this.list = []
         this.empty = true
     }
 
     /**
      * Add animation(s) to animation list
      * @param {object|object[]...} any animation class
+     * @return {object} first animation
      */
     add()
     {
+        let first
         for (let arg of arguments)
         {
             if (Array.isArray(arg))
             {
                 for (let entry of arg)
                 {
+                    if (!first)
+                    {
+                        first = entry
+                    }
                     this.list.push(entry)
                 }
             }
             else
             {
+                first = arg
                 this.list.push(arg)
             }
         }
         this.empty = false
-        return arguments[0]
+        return first
     }
 
     /**
@@ -19641,20 +19667,42 @@ module.exports = class List extends Loop
      * @param {object|array} animate - the animation (or array of animations) to remove; can be null
      * @inherited from yy-loop
      */
-    // remove(animate)
+    remove(animate)
+    {
+        const index = this.list.indexOf(animate)
+        if (index !== -1)
+        {
+            this.list.splice(index, 1)
+        }
+    }
 
     /**
      * remove all animations from list
      * @inherited from yy-loop
      */
-    // removeAll()
+    removeAll()
+    {
+        this.list = []
+    }
 
     /**
-     * update frame; can be called manually or automatically with start()
+     * update frame
+     * this is automatically added to PIXI.ticker unless options.noTicker is set
+     * if using options.noTicker, this should be called manually
+     * @param {number} elasped time in MS since last update
      */
-    update()
+    update(elapsed)
     {
-        super.update()
+        for (let i = 0, _i = this.list.length; i < _i; i++)
+        {
+            if (this.list[i].update(elapsed))
+            {
+                this.list.splice(i, 1)
+                i--
+                _i--
+            }
+        }
+        this.emit('each', this)
         if (this.list.length === 0 && !this.empty)
         {
             this.emit('done', this)
@@ -19663,29 +19711,30 @@ module.exports = class List extends Loop
     }
 
     /**
-     * @type {number} number of animations
-     * @inherited yy-looop
+     * number of animations
+     * @type {number}
      */
-    // get count()
+    get count()
+    {
+        return this.list.length
+    }
 
     /**
-     * @type {number} number of active animations
-     * @inherited yy-looop
+     * number of active animations
+     * @type {number}
      */
-    // get countRunning()
-
-    /**
-     * starts an automatic requestAnimationFrame() loop based on yy-loop
-     * alternatively, you can call update() manually
-     * @inherited yy-loop
-     */
-    // start()
-
-    /**
-     * stops the automatic requestAnimationFrame() loop
-     * @inherited yy-loop
-     */
-    // stop()
+    get countRunning()
+    {
+        let count = 0
+        for (let entry of this.list)
+        {
+            if (!entry.pause)
+            {
+                count++
+            }
+        }
+        return count
+    }
 
     /** helper to add to the list a new Ease.to class; see Ease.to class below for parameters */
     to() { return this.add(new To(...arguments)) }
@@ -19713,27 +19762,8 @@ module.exports = class List extends Loop
 
     /** helper to add to the list a new Ease.wait class; see Ease.to class below for parameters */
     wait() { return this.add(new Wait(...arguments)) }
-
-    /** Inherited functions from yy-loop */
-
-    /**
-     * adds an interval
-     * @param {function} callback
-     * @param {number} time
-     * @param {number} count
-     * @inherited from yy-loop
-     */
-    // interval(callback, time, count)
-
-    /**
-     * adds a timeout
-     * @param {function} callback
-     * @param {number} time
-     * @inherited from yy-loop
-     */
-    // timeout(callback, time)
 }
-},{"./angle":194,"./face":195,"./load":197,"./movie":198,"./shake":199,"./target":200,"./tint":201,"./to":202,"./wait":203,"yy-loop":393}],197:[function(require,module,exports){
+},{"./angle":194,"./face":195,"./load":197,"./movie":198,"./shake":199,"./target":200,"./tint":201,"./to":202,"./wait":203,"eventemitter3":7,"pixi.js":336}],197:[function(require,module,exports){
 const wait = require('./wait')
 const to = require('./to')
 const tint = require('./tint')
@@ -19795,7 +19825,6 @@ module.exports = class movie extends wait
      * @param {Function} [options.load] loads an animation using a .save() object note the * parameters below cannot be loaded and must be re-set
      * @param {Function} [options.ease] function from easing.js (see http://easings.net for examples)
      * @emits {done} animation expires
-     * @emits {cancel} animation is cancelled
      * @emits {wait} each update during a wait
      * @emits {first} first update when animation starts
      * @emits {each} each update while animation is running
@@ -19812,7 +19841,6 @@ module.exports = class movie extends wait
             this.list = object
             this.object = this.list[0]
         }
-        this.ease = options.ease || this.noEase
         if (options.load)
         {
             this.load(options.load)
@@ -19831,10 +19859,6 @@ module.exports = class movie extends wait
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
         const save = super.save()
         save.goto = this.goto
         save.current = this.current
@@ -19865,7 +19889,7 @@ module.exports = class movie extends wait
 
     calculate()
     {
-        let index = Math.round(this.ease(this.time, 0, this.length - 1, this.duration))
+        let index = Math.round(this.options.ease(this.time, 0, this.length - 1, this.duration))
         if (this.isReverse)
         {
             index = this.length - 1 - index
@@ -19933,10 +19957,6 @@ module.exports = class shake extends wait
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
         const save = super.save()
         save.start = this.start
         save.amount = this.amount
@@ -20024,10 +20044,6 @@ module.exports = class target extends wait
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
         const save = super.save()
         save.speed = this.speed
         save.keepAlive = this.options.keepAlive
@@ -20093,7 +20109,6 @@ module.exports = class tint extends wait
             this.object = this.list[0]
         }
         this.duration = duration
-        this.ease = this.options.ease || this.noEase
         if (options.load)
         {
             this.load(options.load)
@@ -20111,10 +20126,6 @@ module.exports = class tint extends wait
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
         const save = super.save()
         save.start = this.start
         save.to = this.to
@@ -20130,7 +20141,7 @@ module.exports = class tint extends wait
 
     calculate()
     {
-        const percent = this.ease(this.time, 0, 1, this.duration)
+        const percent = this.options.ease(this.time, 0, 1, this.duration)
         if (this.tints)
         {
             const each = 1 / (this.tints.length - 1)
@@ -20207,11 +20218,9 @@ module.exports = class to extends wait
      * @param {boolean} [options.pause] start the animation paused
      * @param {boolean|number} [options.repeat] true: repeat animation forever n: repeat animation n times
      * @param {boolean|number} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
-     * @param {boolean|number} [options.continue] true: continue animation with new starting values n: continue animation n times
      * @param {Function} [options.load] loads an animation using an .save() object note the * parameters below cannot be loaded and must be re-set
      * @param {string|Function} [options.ease] name or function from easing.js (see http://easings.net for examples)
      * @emits to:done animation expires
-     * @emits to:cancel animation is cancelled
      * @emits to:wait each update during a wait
      * @emits to:first first update when animation starts
      * @emits to:each each update while animation is running
@@ -20228,7 +20237,6 @@ module.exports = class to extends wait
             this.list = object
             this.object = this.list[0]
         }
-        this.ease = options.ease || this.noEase
         if (options.load)
         {
             this.load(options.load)
@@ -20256,10 +20264,6 @@ module.exports = class to extends wait
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
         const save = super.save()
         save.goto = this.goto
         save.start = this.start
@@ -20293,7 +20297,7 @@ module.exports = class to extends wait
             // handles keys with one additional level e.g.: goto = {scale: {x: 5, y: 3}}
             if (isNaN(goto[key]))
             {
-                keys[i] = {key: key, children: []}
+                keys[i] = { key: key, children: [] }
                 start[i] = []
                 delta[i] = []
                 let j = 0
@@ -20328,12 +20332,12 @@ module.exports = class to extends wait
         const delta = this.delta
         const start = this.start
 
-        for (let i = 0; i < keys.length; i++)
+        for (let i = 0, _i = keys.length; i < _i; i++)
         {
             const key = keys[i]
             if (isNaN(goto[key]))
             {
-                for (let j = 0; j < key.children.length; j++)
+                for (let j = 0, _j = key.children.length; j < _j; j++)
                 {
                     delta[i][j] = -delta[i][j]
                     start[i][j] = parseFloat(object[key.key][key.children[j]])
@@ -20343,32 +20347,6 @@ module.exports = class to extends wait
             else
             {
                 delta[i] = -delta[i]
-                start[i] = parseFloat(object[key])
-                start[i] = isNaN(start[i]) ? 0 : start[i]
-            }
-        }
-    }
-
-    continue()
-    {
-        const object = this.object
-        const keys = this.keys
-        const goto = this.goto
-        const start = this.start
-
-        for (let i = 0; i < keys.length; i++)
-        {
-            const key = keys[i]
-            if (isNaN(goto[key]))
-            {
-                for (let j = 0; j < key.children.length; j++)
-                {
-                    this.start[i][j] = parseFloat(object[key.key][key.children[j]])
-                    this.start[i][j] = isNaN(start[i][j]) ? 0 : start[i][j]
-                }
-            }
-            else
-            {
                 start[i] = parseFloat(object[key])
                 start[i] = isNaN(start[i]) ? 0 : start[i]
             }
@@ -20385,20 +20363,20 @@ module.exports = class to extends wait
         const start = this.start
         const delta = this.delta
         const duration = this.duration
-        const ease = this.ease
-        for (let i = 0; i < this.keys.length; i++)
+        const ease = this.options.ease
+        for (let i = 0, _i = this.keys.length; i < _i; i++)
         {
             const key = keys[i]
             if (isNaN(goto[key]))
             {
                 const key1 = key.key
-                for (let j = 0; j < key.children.length; j++)
+                for (let j = 0, _j = key.children.length; j < _j; j++)
                 {
                     const key2 = key.children[j]
                     const others = object[key1][key2] = (time >= duration) ? start[i][j] + delta[i][j] : ease(time, start[i][j], delta[i][j], duration)
                     if (list)
                     {
-                        for (let k = 1; k < list.length; k++)
+                        for (let k = 1, _k = list.length; k < _k; k++)
                         {
                             list[k][key1][key2] = others
                         }
@@ -20411,7 +20389,7 @@ module.exports = class to extends wait
                 const others = object[key] = (time >= duration) ? start[i] + delta[i] : ease(time, start[i], delta[i], duration)
                 if (list)
                 {
-                    for (let j = 1; j < this.list.length; j++)
+                    for (let j = 1, _j = this.list.length; j < _j; j++)
                     {
                         list[j][key] = others
                     }
@@ -20433,13 +20411,12 @@ module.exports = class wait extends EventEmitter
      * @param {boolean} [options.pause] start the animation paused
      * @param {(boolean|number)} [options.repeat] true: repeat animation forever n: repeat animation n times
      * @param {(boolean|number)} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
-     * @param {(boolean|number)} [options.continue] true: continue animation with new starting values n: continue animation n times
+     *
      * @param {number} [options.id] user-generated id (e.g., I use it to properly load animations when an object has multiple animations running)
-     * @param {boolean} [options.orphan] delete animation if .parent of object (or first object in list) is null
      * @param {Function} [options.load] loads an animation using an .save() object note the * parameters below cannot be loaded and must be re-set
      * @param {Function|string} [options.ease] function (or penner function name) from easing.js (see http://easings.net for examples)*
+     *
      * @emits {done} animation expires
-     * @emits {cancel} animation is cancelled
      * @emits {wait} each update during a wait
      * @emits {first} first update when animation starts
      * @emits {each} each update while animation is running
@@ -20462,6 +20439,7 @@ module.exports = class wait extends EventEmitter
         }
         if (this.options.ease && typeof this.options.ease !== 'function')
         {
+            this.options.easeName = this.options.ease
             this.options.ease = Easing[this.options.ease]
         }
         if (!this.options.ease)
@@ -20472,11 +20450,7 @@ module.exports = class wait extends EventEmitter
 
     save()
     {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = {type: this.type, time: this.time, duration: this.duration}
+        const save = { type: this.type, time: this.time, duration: this.duration, ease: this.options.easeName }
         const options = this.options
         if (options.wait)
         {
@@ -20498,14 +20472,6 @@ module.exports = class wait extends EventEmitter
         {
             save.reverse = options.reverse
         }
-        if (options.continue)
-        {
-            save.continue = options.continue
-        }
-        if (options.cancel)
-        {
-            save.cancel = options.cancel
-        }
         return save
     }
 
@@ -20515,9 +20481,17 @@ module.exports = class wait extends EventEmitter
         this.options.pause = load.pause
         this.options.repeat = load.repeat
         this.options.reverse = load.reverse
-        this.options.continue = load.continue
-        this.options.cancel = load.cancel
         this.options.id = load.id
+        this.options.ease = load.ease
+        if (this.options.ease && typeof this.options.ease !== 'function')
+        {
+            this.options.easeName = this.options.ease
+            this.options.ease = Easing[this.options.ease]
+        }
+        if (!this.options.ease)
+        {
+            this.options.ease = Easing['linear']
+        }
         this.time = load.time
         this.duration = load.duration
     }
@@ -20532,15 +20506,6 @@ module.exports = class wait extends EventEmitter
     get pause()
     {
         return this.options.pause
-    }
-
-    cancel()
-    {
-        this.options.cancel = true
-    }
-
-    done()
-    {
     }
 
     end(leftOver)
@@ -20578,71 +20543,29 @@ module.exports = class wait extends EventEmitter
             }
             this.emit('loop', this.list || this.object)
         }
-        else if (this.options.continue)
-        {
-            this.continue()
-            this.time = leftOver
-            if (this.options.continue !== true)
-            {
-                this.options.continue--
-            }
-            this.emit('loop', this.list || this.object)
-        }
         else
         {
             this.done()
             this.emit('done', this.list || this.object, leftOver)
-            this.list = this.object = null
+            // this.list = this.object = null
             return true
         }
     }
 
     update(elapsed)
     {
-        if (!this.options)
+        const options = this.options
+        if (options.pause)
         {
             return
         }
-        if (this.options.cancel)
+        if (options.wait)
         {
-            this.emit('cancel', this.list || this.object)
-            return true
-        }
-        if (this.options.orphan)
-        {
-            if (this.list)
+            options.wait -= elapsed
+            if (options.wait <= 0)
             {
-                if (!this.list[0].parent)
-                {
-                    return true
-                }
-            }
-            else if (!this.object.parent)
-            {
-                return true
-            }
-        }
-        if (this.options.restart)
-        {
-            this.restart()
-            this.options.pause = false
-        }
-        if (this.options.original)
-        {
-            this.time = 0
-            this.options.pause = false
-        }
-        if (this.options.pause)
-        {
-            return
-        }
-        if (this.options.wait)
-        {
-            this.options.wait -= elapsed
-            if (this.options.wait <= 0)
-            {
-                elapsed = -this.options.wait
-                this.options.wait = false
+                elapsed = -options.wait
+                options.wait = false
             }
             else
             {
@@ -20657,21 +20580,20 @@ module.exports = class wait extends EventEmitter
         }
         this.time += elapsed
         let leftOver = 0
-        if (this.duration !== 0 && this.time > this.duration)
+        const duration = this.duration
+        let time = this.time
+        if (duration !== 0 && time > duration)
         {
-            leftOver = this.time - this.duration
-            this.time = this.duration
+            leftOver = time - duration
+            this.time = time = duration
         }
-        const allDone = this.calculate(elapsed)
+        const force = this.calculate(elapsed)
         this.emit('each', elapsed, this.list || this.object, this)
-        if (this.type === 'Wait' || (this.duration !== 0 && this.time === this.duration))
+        if (this.type === 'Wait' || (duration !== 0 && time === duration))
         {
             return this.end(leftOver)
         }
-        if (allDone)
-        {
-            return true
-        }
+        return force || time === duration
     }
 
     // correct certain DOM values
@@ -20685,7 +20607,9 @@ module.exports = class wait extends EventEmitter
         return value
     }
 
-    calculate() {}
+    reverse() {}
+    calculate() { }
+    done() { }
 }
 },{"eventemitter3":7,"penner":192}],204:[function(require,module,exports){
 var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
@@ -33686,7 +33610,7 @@ var SpriteMaskFilter = function (_Filter) {
 
 exports.default = SpriteMaskFilter;
 
-},{"../../../../math":251,"../../../../textures/TextureMatrix":297,"../Filter":267,"path":400}],271:[function(require,module,exports){
+},{"../../../../math":251,"../../../../textures/TextureMatrix":297,"../Filter":267,"path":397}],271:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37385,7 +37309,7 @@ function generateSampleSrc(maxTextures) {
     return src;
 }
 
-},{"../../Shader":225,"path":400}],289:[function(require,module,exports){
+},{"../../Shader":225,"path":397}],289:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42703,7 +42627,7 @@ function determineCrossOrigin(url) {
     return '';
 }
 
-},{"url":406}],306:[function(require,module,exports){
+},{"url":403}],306:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -47149,7 +47073,7 @@ exports.default = TilingSpriteRenderer;
 
 core.WebGLRenderer.registerPlugin('tilingSprite', TilingSpriteRenderer);
 
-},{"../../core":246,"../../core/const":227,"path":400}],324:[function(require,module,exports){
+},{"../../core":246,"../../core/const":227,"path":397}],324:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -47233,7 +47157,7 @@ var AlphaFilter = function (_core$Filter) {
 
 exports.default = AlphaFilter;
 
-},{"../../core":246,"path":400}],325:[function(require,module,exports){
+},{"../../core":246,"path":397}],325:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -48396,7 +48320,7 @@ var ColorMatrixFilter = function (_core$Filter) {
 exports.default = ColorMatrixFilter;
 ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 
-},{"../../core":246,"path":400}],332:[function(require,module,exports){
+},{"../../core":246,"path":397}],332:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -48506,7 +48430,7 @@ var DisplacementFilter = function (_core$Filter) {
 
 exports.default = DisplacementFilter;
 
-},{"../../core":246,"path":400}],333:[function(require,module,exports){
+},{"../../core":246,"path":397}],333:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -48560,7 +48484,7 @@ var FXAAFilter = function (_core$Filter) {
 
 exports.default = FXAAFilter;
 
-},{"../../core":246,"path":400}],334:[function(require,module,exports){
+},{"../../core":246,"path":397}],334:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -48736,7 +48660,7 @@ var NoiseFilter = function (_core$Filter) {
 
 exports.default = NoiseFilter;
 
-},{"../../core":246,"path":400}],336:[function(require,module,exports){
+},{"../../core":246,"path":397}],336:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -51355,7 +51279,7 @@ function parse(resource, texture) {
     resource.bitmapFont = _extras.BitmapText.registerFont(resource.data, texture);
 }
 
-},{"../core":246,"../extras":322,"path":400,"resource-loader":376}],344:[function(require,module,exports){
+},{"../core":246,"../extras":322,"path":397,"resource-loader":376}],344:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -51713,7 +51637,7 @@ function getResourcePath(resource, baseUrl) {
     return _url2.default.resolve(resource.url.replace(baseUrl, ''), resource.data.meta.image);
 }
 
-},{"../core":246,"resource-loader":376,"url":406}],347:[function(require,module,exports){
+},{"../core":246,"resource-loader":376,"url":403}],347:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -53363,7 +53287,7 @@ exports.default = MeshRenderer;
 
 core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
 
-},{"../../core":246,"../Mesh":348,"path":400,"pixi-gl-core":210}],355:[function(require,module,exports){
+},{"../../core":246,"../Mesh":348,"path":397,"pixi-gl-core":210}],355:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -59022,7 +58946,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":399}],386:[function(require,module,exports){
+},{"crypto":396}],386:[function(require,module,exports){
 // TinyColor v1.4.1
 // https://github.com/bgrins/TinyColor
 // Brian Grinstead, MIT License
@@ -60804,7 +60728,7 @@ class Color
 };
 
 module.exports = new Color();
-},{"yy-random":397}],389:[function(require,module,exports){
+},{"yy-random":391}],389:[function(require,module,exports){
 // yy-counter
 // In-browser counter to watch changeable values like counters or FPS
 // David Figatner
@@ -60923,296 +60847,238 @@ module.exports = class Counter
     }
 }
 },{}],390:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{"dup":3,"tinycolor2":391,"yy-counter":392}],391:[function(require,module,exports){
-arguments[4][386][0].apply(exports,arguments)
-},{"dup":386}],392:[function(require,module,exports){
-arguments[4][389][0].apply(exports,arguments)
-},{"dup":389}],393:[function(require,module,exports){
-module.exports = require('./src/loop')
-},{"./src/loop":396}],394:[function(require,module,exports){
-arguments[4][370][0].apply(exports,arguments)
-},{"dup":370}],395:[function(require,module,exports){
-const Events = require('eventemitter3')
+const Color = require('tinycolor2')
+const Counter = require('yy-counter')
 
-/** Entry class for Loop */
-class Entry extends Events
-{
-    /**
-     * create an entry in the update loop
-     * used by Loop
-     * @param {function} callback
-     * @param {number} [time=0] in milliseconds to call this update
-     * @param {number} [count] number of times to run this update (undefined=infinite)
-     */
-    constructor(callback, time, count)
-    {
-        super()
-        this.callback = callback
-        this.time = time
-        this.current = 0
-        this.count = count
-    }
-
-    /**
-     * run the callback if available
-     * @private
-     * @param {number} elapsed
-     */
-    _update(elapsed)
-    {
-        let result
-        if (this.callback)
-        {
-            result = this.callback(elapsed, this)
-        }
-        this.emit('each', elapsed, this)
-        if (result || (!isNaN(this.count) && !--this.count))
-        {
-            this.emit('done', this)
-            return true
-        }
-    }
-
-    /**
-     * update checks time and runs the callback
-     * @param {number} elapsed
-     * @return {boolean} whether entry is complete and may be removed from list
-     */
-    update(elapsed)
-    {
-        if (!this._pause)
-        {
-            if (this.time)
-            {
-                this.current += elapsed
-                if (this.current >= this.time)
-                {
-                    this.current -= this.time
-                    return this._update(elapsed)
-                }
-            }
-            else
-            {
-                return this._update(elapsed)
-            }
-        }
-    }
-
-    /**
-     * @type {boolean} pause this entry
-     */
-    set pause(value)
-    {
-        this._pause = value
-    }
-    get pause()
-    {
-        return this._pause
-    }
+const STYLES = {
+    'background': 'rgba(0, 0, 0, 0.5)',
+    'color': 'white',
 }
 
-module.exports = Entry
-},{"eventemitter3":394}],396:[function(require,module,exports){
-/* Copyright (c) 2017 YOPEY YOPEY LLC */
+const STYLES_FPS = {
+    'padding': '0.1em 0.5em'
+}
 
-const Events = require('eventemitter3')
+const STYLES_METER = {
+}
 
-class Loop extends Events
+module.exports = class FPS
 {
     /**
-     * basic loop support
      * @param {object} [options]
-     * @param {number} [options.maxFrameTime=1000/60] maximum time in milliseconds for a frame
-     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
-     *
-     * @event each(elapsed, Loop, elapsedInLoop)
-     * @event start(Loop)
-     * @event stop(Loop)
+     * @param {boolean} [options.meter=true] include a meter with the FPS
+     * @param {string} [options.side=bottom-right] include any combination of left/right and top/bottom
+     * @param {number} [options.FPS=60] desired FPS
+     * @param {number} [options.tolerance=1] minimum tolerance for fluctuations in FPS number
+     * @param {number} [options.meterWidth=100] width of meter div
+     * @param {number} [options.meterHeight=25] height of meter div
+     * @param {number} [options.meterLineHeight=4] height of meter line
+     * @param {styles[]} [options.styles] CSS styles to apply to the div (in javascript format)
+     * @param {styles[]} [options.stylesFPS] CSS styles to apply to the FPS text (in javascript format)
+     * @param {styles[]} [options.stylesMeter] CSS styles to apply to the FPS meter (in javascript format)
+     * @param {string} [options.text=" FPS"] change the text to the right of the FPS
      */
     constructor(options)
     {
-        super()
-        options = options || {}
-        this.maxFrameTime = options.maxFrameTime || 1000 / 60
-        if (options.pauseOnBlur)
-        {
-            window.addEventListener('blur', this.stopBlur.bind(this))
-            window.addEventListener('focus', this.startBlur.bind(this))
-        }
-        this.list = []
+        this.options = options || {}
+        this.tolerance = this.options.tolerance || 1
+        this.FPS = this.options.FPS || 60
+        this.meterWidth = this.options.meterWidth || 100
+        this.meterHeight = this.options.meterHeight || 25
+        this.meterLineHeight = this.options.meterLineHeight || 4
+        this.div = document.createElement('div')
+        Counter.findParent(this.options.side || 'bottom-right').appendChild(this.div)
+        this.style(this.div, STYLES, this.options.styles)
+        this.divFPS()
+        this.meter = typeof this.options.meter === 'undefined' || this.options.meter
+        this.lastTime = 0
+        this.frameNumber = 0
+        this.lastUpdate = 0
+        this.lastFPS = '--'
     }
 
     /**
-     * start requestAnimationFrame() loop
-     * @return {Loop} this
+     * change desired FPS
+     * @type {number}
      */
-    start()
+    get fps()
     {
-        if (!this.running)
+        return this.FPS
+    }
+    set fps(value)
+    {
+        this.FPS = value
+    }
+
+    /**
+     * remove meter from DOM
+     */
+    remove()
+    {
+        this.div.remove()
+    }
+
+    /**
+     * @type {boolean} meter (the FPS graph) is on or off
+     */
+    get meter()
+    {
+        return this._meter
+    }
+    set meter(value)
+    {
+        if (value)
         {
-            this.running = true
-            if (!this.waiting)
+            this.divMeter()
+        }
+        else if (this.meterCanvas)
+        {
+            this.meterCanvas.style.display = 'none'
+        }
+    }
+
+    style(div, style1, style2)
+    {
+        for (let style in style1)
+        {
+            div.style[style] = style1[style]
+        }
+        if (style2)
+        {
+            for (let style in style2)
             {
-                this.loop()
-            }
-            this.emit('start', this)
-        }
-        return this
-    }
-
-    /**
-     * handler for focus event
-     * @private
-     */
-    startBlur()
-    {
-        if (this.blurred)
-        {
-            this.start()
-            this.blurred = false
-        }
-    }
-
-    /**
-     * handler for blur event
-     * @private
-     */
-    stopBlur()
-    {
-        if (this.running)
-        {
-            this.stop()
-            this.blurred = true
-        }
-    }
-
-    /**
-     * stop loop
-     * @return {Loop} this
-     */
-    stop()
-    {
-        this.running = false
-        this.blurred = false
-        this.emit('stop', this)
-        return this
-    }
-
-    /**
-     * loop through updates; can be called manually each frame, or called automatically as part of start()
-     */
-    update()
-    {
-        const now = performance.now()
-        let elapsed = now - this.last ? this.last : 0
-        elapsed = elapsed > this.maxFrameTime ? this.maxFrameTime : elapsed
-        for (let entry of this.list)
-        {
-            if (entry.update(elapsed))
-            {
-                this.remove(entry)
+                div.style[style] = style2[style]
             }
         }
-        this.emit('each', elapsed, this, now - performance.now())
-        this.last = now
     }
 
     /**
-     * internal loop through animations
+     * create div for text FPS
      * @private
+     * @param {HTMLElement} div
+     * @param {object} options (see contructor)
      */
-    loop()
+    divFPS()
     {
-        if (this.running)
+        const div = this.div
+        const options = this.options
+        const divFPS = document.createElement('div')
+        div.appendChild(divFPS)
+        this.fpsSpan = document.createElement('span')
+        divFPS.appendChild(this.fpsSpan)
+        const span = document.createElement('span')
+        divFPS.appendChild(span)
+        span.innerText = typeof options.text !== 'undefined' ? options.text : ' FPS'
+        this.style(div, STYLES_FPS, options.stylesFPS)
+    }
+
+    /**
+     * create div for FPS meter
+     * @private
+     * @param {HTMLElement} div
+     * @param {object} options (see contructor)
+     */
+    divMeter()
+    {
+        const div = this.div
+        const options = this.options
+        if (!this.meterCanvas)
         {
-            this.waiting = false
-            this.update()
-            requestAnimationFrame(this.loop.bind(this))
-            this.waiting = true
+            this.meterCanvas = document.createElement('canvas')
+            div.appendChild(this.meterCanvas)
+            this.meterCanvas.width = this.meterWidth
+            this.meterCanvas.height = this.meterHeight
+            this.meterCanvas.style.width = div.width + 'px'
+            this.meterCanvas.style.height = div.height + 'px'
+            this.style(this.meterCanvas, STYLES_METER, options.stylesMeter)
         }
         else
         {
-            this.waiting = false
+            this.meterCanvas.style.display = 'block'
         }
     }
 
     /**
-     * adds a callback to the loop
-     * @param {function} callback
-     * @param {number} [time=0] in milliseconds to call this update (0=every frame)
-     * @param {number} [count=0] number of times to run this update (0=infinite)
-     * @return {object} entry - used to remove or change the parameters of the update
+     * call this at the start of the frame to calculate FPS
      */
-    interval(callback, time, count)
+    frame()
     {
-        const entry = new Entry(callback, time, count)
-        this.list.push(entry)
-        return entry
-    }
+        this.frameNumber++
+        const currentTime = performance.now() - this.lastTime
 
-    /**
-     * adds a one-time callback to the loop
-     * @param {function} callback
-     * @param {number} time in milliseconds to call this update
-     * @return {object} entry - used to remove or change the parameters of the update
-     */
-    timeout(callback, time)
-    {
-        return this.interval(callback, time, 1)
-    }
-
-    /**
-     * remove a callback from the loop
-     * @param {object} entry - returned by add()
-     */
-    remove(entry)
-    {
-        const index = this.list.indexOf(entry)
-        if (index !== -1)
+        // skip large differences to remove garbage
+        if (currentTime > 500)
         {
-            this.list.splice(index, 1)
-        }
-    }
-
-    /**
-     * removes all callbacks from the loop
-     */
-    removeAll()
-    {
-        this.list = []
-    }
-
-    /**
-     * @type {number} count of all animations
-     */
-    get count()
-    {
-        return this.list.length
-    }
-
-    /**
-     * @type {number} count of running animations
-     */
-    get countRunning()
-    {
-        let count = 0
-        for (let entry of this.list)
-        {
-            if (!entry.pause)
+            if (this.lastTime !== 0)
             {
-                count++
+                this.lastFPS = Math.floor(this.frameNumber / (currentTime / 1000))
+                if (this.lastFPS >= this.FPS - this.tolerance && this.lastFPS <= this.FPS + this.tolerance)
+                {
+                    this.lastFPS = this.FPS
+                }
+            }
+            this.lastTime = performance.now()
+            this.frameNumber = 0
+        }
+        this.fpsSpan.innerText = this.lastFPS
+        if (this.meterCanvas && this.lastFPS !== '--')
+        {
+            this.meterUpdate(this.lastFPS / this.FPS)
+        }
+    }
+
+    meterUpdate(percent)
+    {
+        const c = this.meterCanvas.getContext('2d')
+        const data = c.getImageData(0, 0, this.meterCanvas.width, this.meterCanvas.height)
+        c.putImageData(data, -1, 0)
+        c.clearRect(this.meterCanvas.width - 1, 0, 1, this.meterCanvas.height)
+        if (percent < 0.5)
+        {
+            c.fillStyle = Color.mix('#ff0000', '0xffa500', percent * 200).toHexString()
+        }
+        else
+        {
+            c.fillStyle = Color.mix('#ffa500', '#00ff00', (percent - 0.5) * 200).toHexString()
+        }
+        const height = (this.meterCanvas.height - this.meterLineHeight) * (1 - percent)
+        c.fillRect(this.meterCanvas.width - 1, height, 1, this.meterLineHeight)
+    }
+
+    side(options)
+    {
+        if (options.side)
+        {
+            options.side = options.side.toLowerCase()
+            if (options.side.indexOf('left') !== -1)
+            {
+                STYLES['left'] = 0
+                delete STYLES['right']
+            }
+            else
+            {
+                STYLES['right'] = 0
+                delete STYLES['left']
+            }
+            if (options.side.indexOf('top') !== -1)
+            {
+                STYLES['top'] = 0
+                delete STYLES['bottom']
+            }
+            else
+            {
+                STYLES['bottom'] = 0
+                delete STYLES['top']
             }
         }
-        return count
+        else
+        {
+            STYLES['right'] = 0
+            STYLES['bottom'] = 0
+        }
     }
 }
-
-const Entry = require('./entry')
-
-Loop.entry = Entry
-module.exports = Loop
-},{"./entry":395,"eventemitter3":394}],397:[function(require,module,exports){
+},{"tinycolor2":386,"yy-counter":389}],391:[function(require,module,exports){
 // yy-random
 // by David Figatner
 // MIT license
@@ -61638,7 +61504,303 @@ class Random
 }
 
 module.exports = new Random()
-},{"seedrandom":378}],398:[function(require,module,exports){
+},{"seedrandom":378}],392:[function(require,module,exports){
+const Loop = require('./src/loop')
+Loop.entry = require('./src/entry')
+
+module.exports = Loop
+},{"./src/entry":393,"./src/loop":394}],393:[function(require,module,exports){
+const Events = require('eventemitter3')
+
+/** Entry class for Loop */
+class Entry extends Events
+{
+    /**
+     * create an entry in the update loop
+     * used by Loop
+     * @param {function} callback
+     * @param {number} [time=0] in milliseconds to call this update
+     * @param {number} [count] number of times to run this update (undefined=infinite)
+     */
+    constructor(callback, time, count)
+    {
+        super()
+        this.callback = callback
+        this.time = time
+        this.current = 0
+        this.count = count
+    }
+
+    /**
+     * run the callback if available
+     * @private
+     * @param {number} elapsed
+     */
+    _update(elapsed)
+    {
+        let result
+        if (this.callback)
+        {
+            result = this.callback(elapsed, this)
+        }
+        this.emit('each', elapsed, this)
+        if (result || (!isNaN(this.count) && !--this.count))
+        {
+            this.emit('done', this)
+            return true
+        }
+    }
+
+    /**
+     * update checks time and runs the callback
+     * @param {number} elapsed
+     * @return {boolean} whether entry is complete and may be removed from list
+     */
+    update(elapsed)
+    {
+        if (!this._pause)
+        {
+            if (this.time)
+            {
+                this.current += elapsed
+                if (this.current >= this.time)
+                {
+                    this.current -= this.time
+                    return this._update(elapsed)
+                }
+            }
+            else
+            {
+                return this._update(elapsed)
+            }
+        }
+    }
+
+    /**
+     * @type {boolean} pause this entry
+     */
+    set pause(value)
+    {
+        this._pause = value
+    }
+    get pause()
+    {
+        return this._pause
+    }
+}
+
+module.exports = Entry
+},{"eventemitter3":7}],394:[function(require,module,exports){
+/* Copyright (c) 2017 YOPEY YOPEY LLC */
+
+const Events = require('eventemitter3')
+
+class Loop extends Events
+{
+    /**
+     * basic loop support
+     * @param {object} [options]
+     * @param {number} [options.maxFrameTime=1000/60] maximum time in milliseconds for a frame
+     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
+     *
+     * @event each(elapsed, Loop)
+     * @event start(Loop)
+     * @event stop(Loop)
+     */
+    constructor(options)
+    {
+        super()
+        options = options || {}
+        this.maxFrameTime = options.maxFrameTime || 1000 / 60
+        if (options.pauseOnBlur)
+        {
+            window.addEventListener('blur', () => this.stopBlur())
+            window.addEventListener('focus', () => this.startBlur())
+        }
+        this.list = []
+    }
+
+    /**
+     * start requestAnimationFrame() loop
+     * @return {Loop} this
+     */
+    start()
+    {
+        if (!this.running)
+        {
+            this.running = true
+            this.loop(0)
+            this.emit('start', this)
+        }
+        return this
+    }
+
+    /**
+     * handler for focus event
+     * @private
+     */
+    startBlur()
+    {
+        if (this.blurred)
+        {
+            this.start()
+            this.blurred = false
+        }
+    }
+
+    /**
+     * handler for blur event
+     * @private
+     */
+    stopBlur()
+    {
+        if (this.running)
+        {
+            this.stop()
+            this.blurred = true
+        }
+    }
+
+    /**
+     * stop loop
+     * @return {Loop} this
+     */
+    stop()
+    {
+        if (this.handle)
+        {
+            window.cancelAnimationFrame(this.handle)
+            this.handle = null
+        }
+        this.running = false
+        this.blurred = false
+        this.emit('stop', this)
+        return this
+    }
+
+    /**
+     * loop through updates; can be called manually each frame, or called automatically as part of start()
+     * @param {number} elapsed time since last call (will be clamped to this.maxFrameTime)
+     */
+    update(elapsed)
+    {
+        const maxFrameTime = this.maxFrameTime
+        elapsed = elapsed > maxFrameTime ? maxFrameTime : elapsed
+        for (let i = 0, _i = this.list.length; i < _i; i++)
+        {
+            if (this.list[i].update(elapsed))
+            {
+                this.list.splice(i, 1)
+                i--
+                _i--
+            }
+        }
+        this.emit('each', elapsed, this)
+    }
+
+    /**
+     * internal loop through animations
+     * @private
+     */
+    loop(elapsed)
+    {
+        if (this.running)
+        {
+            this.update(elapsed)
+            this.handle = requestAnimationFrame((elapsed) => this.loop(elapsed))
+        }
+    }
+
+    /**
+     * adds a callback to the loop
+     * @deprecated use add() instead
+     * @param {function} callback
+     * @param {number} [time=0] in milliseconds to call this update (0=every frame)
+     * @param {number} [count=0] number of times to run this update (0=infinite)
+     * @return {object} entry - used to remove or change the parameters of the update
+     */
+    interval(callback, time, count)
+    {
+        console.warn('yy-loop: interval() deprecated. Use add() instead.')
+        this.add(callback, time, count)
+    }
+
+    /**
+     * adds a callback to the loop
+     * @param {function} callback
+     * @param {number} [time=0] in milliseconds to call this update (0=every frame)
+     * @param {number} [count=0] number of times to run this update (0=infinite)
+     * @return {object} entry - used to remove or change the parameters of the update
+     */
+    add(callback, time, count)
+    {
+        const entry = new Entry(callback, time, count)
+        this.list.push(entry)
+        return entry
+    }
+
+    /**
+     * adds a one-time callback to the loop
+     * @param {function} callback
+     * @param {number} time in milliseconds to call this update
+     * @return {object} entry - used to remove or change the parameters of the update
+     */
+    timeout(callback, time)
+    {
+        return this.add(callback, time, 1)
+    }
+
+    /**
+     * remove a callback from the loop
+     * @param {object} entry - returned by add()
+     */
+    remove(entry)
+    {
+        const index = this.list.indexOf(entry)
+        if (index !== -1)
+        {
+            this.list.splice(index, 1)
+        }
+    }
+
+    /**
+     * removes all callbacks from the loop
+     */
+    removeAll()
+    {
+        this.list = []
+    }
+
+    /**
+     * @type {number} count of all animations
+     */
+    get count()
+    {
+        return this.list.length
+    }
+
+    /**
+     * @type {number} count of running animations
+     */
+    get countRunning()
+    {
+        let count = 0
+        for (let entry of this.list)
+        {
+            if (!entry.pause)
+            {
+                count++
+            }
+        }
+        return count
+    }
+}
+
+const Entry = require('./entry')
+
+Loop.entry = Entry
+module.exports = Loop
+},{"./entry":393,"eventemitter3":7}],395:[function(require,module,exports){
 // yy-renderer
 // by David Figatner
 // (c) YOPEY YOPEY LLC 2017
@@ -61650,7 +61812,7 @@ const FPS = require('yy-fps')
 const Loop = require('yy-loop')
 const exists = require('exists')
 
-class Renderer extends Loop
+class Renderer
 {
     /**
      * Wrapper for a pixi.js Renderer
@@ -61666,6 +61828,9 @@ class Renderer extends Loop
      * @param {boolean} [options.autoresize=false] automatically calls resize during resize events
      * @param {number} [options.color=0xffffff] background color in hex
      *
+     * @param {boolean} [options.turnOffTicker] turn off PIXI.shared.ticker
+     * @param {boolean} [options.turnOffInteraction] turn off PIXI.Interaction manager (saves cycles)
+     *
      * @param {boolean} [options.noWebGL=false] use the PIXI.CanvasRenderer instead of PIXI.WebGLRenderer
      * @param {boolean} [options.antialias=true] turn on antialias if native antialias is not used, uses FXAA
      * @param {boolean} [options.forceFXAA=false] forces FXAA antialiasing to be used over native. FXAA is faster, but may not always look as great
@@ -61677,7 +61842,6 @@ class Renderer extends Loop
      * @param {boolean|string} [options.debug] false, true, or some combination of 'fps', 'dirty', and 'count' (e.g., 'count-dirty' or 'dirty')
      * @param {object} [options.fpsOptions] options from yy-fps (https://github.com/davidfig/fps)
      *
-     ** from yy-loop:
      * @param {number} [options.maxFrameTime=1000/60] maximum time in milliseconds for a frame
      * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
      *
@@ -61688,7 +61852,8 @@ class Renderer extends Loop
     constructor(options)
     {
         options = options || {}
-        super({ pauseOnBlur: options.pauseOnBlur, maxFrameTime: options.maxFrameTime })
+        this.options = options
+        this.loop = new Loop({ pauseOnBlur: options.pauseOnBlur, maxFrameTime: options.maxFrameTime })
         this.canvas = options.canvas
         this.autoResize = options.autoresize
         this.aspectRatio = options.aspectRatio
@@ -61699,12 +61864,23 @@ class Renderer extends Loop
         if (!this.canvas) this.createCanvas(options)
         options.view = this.canvas
 
+        if (options.turnoffTicker)
+        {
+            const ticker = PIXI.ticker.shared
+            ticker.autoStart = false
+            ticker.stop()
+        }
+
         const noWebGL = options.noWebGL || false
         options.noWebGL = null
         options.autoresize = null
         const Renderer = noWebGL ? PIXI.CanvasRenderer : PIXI.WebGLRenderer
 
         this.renderer = new Renderer(options)
+        if (options.turnOffInteraction)
+        {
+            this.renderer.plugins.interaction.destroy()
+        }
         if (options.color)
         {
             this.canvas.style.backgroundColor = options.color
@@ -61718,12 +61894,11 @@ class Renderer extends Loop
         }
 
         if (options.debug) this.createDebug(options)
-        if (this.autoResize) window.addEventListener('resize', this.resize.bind(this))
+        if (this.autoResize) window.addEventListener('resize', () => this.resize())
         this.time = 0
         this.stage = new PIXI.Container()
         this.dirty = this.alwaysRender = options.alwaysRender || false
         this.resize(true)
-        this.updateRendererID = this.interval(this.updateRenderer.bind(this), this.FPS)
     }
 
     /**
@@ -61795,10 +61970,9 @@ class Renderer extends Loop
     }
 
     /**
-     * render the scene
      * @private
      */
-    updateRenderer()
+    update()
     {
         if (this.fpsMeter)
         {
@@ -61837,7 +62011,7 @@ class Renderer extends Loop
                 return
             }
             total++
-            for (var i = 0; i < object.children.length; i++)
+            for (let i = 0, _i = object.children.length; i < _i; i++)
             {
                 count(object.children[i])
             }
@@ -61967,84 +62141,68 @@ class Renderer extends Loop
     set fps(value)
     {
         this.FPS = 1000 / value
-        this.removeInterval(this.updateRendererID)
-        this.updateRendererID = this.interval(this.updateRenderer.bind(this), this.FPS)
+        if (this.loop)
+        {
+            this.loop.remove(this.loopSave)
+            this.loopSave = this.loop.add(() => this.update(), this.FPS)
+        }
         if (this.fpsMeter)
         {
             this.fpsMeter.fps = value
         }
     }
 
+    /**
+     * Add a listener for a given event to yy-loop
+     * @param {(String|Symbol)} event The event name.
+     * @param {Function} fn The listener function.
+     * @param {*} [context=this] The context to invoke the listener with.
+     * @returns {EventEmitter} `this`.
+     */
+    on()
+    {
+        this.loop.on(...arguments)
+    }
+
+    /**
+     * Add a one-time listener for a given event to yy-loop
+     * @param {(String|Symbol)} event The event name.
+     * @param {Function} fn The listener function.
+     * @param {*} [context=this] The context to invoke the listener with.
+     * @returns {EventEmitter} `this`.
+     * @public
+     */
+    once()
+    {
+        this.loop.once(...arguments)
+    }
 
     /**
      * start the internal loop
-     * @inherited from yy-loop
      * @returns {Renderer} this
      */
-    // start()
+    start()
+    {
+        this.loopSave = this.loop.add(() => this.update(), this.FPS)
+        this.loop.start()
+        return this
+    }
 
     /**
      * stop the internal loop
      * @inherited from yy-loop
      * @returns {Renderer} this
      */
-    // stop()
-
-    /**
-     * loop through updates; can be called manually each frame, or called automatically as part of start()
-     * @inherited from yy-loop
-     */
-    // update()
-
-    /**
-     * adds a callback to the loop
-     * @inherited from yy-loop
-     * @param {function} callback
-     * @param {number} [time=0] in milliseconds to call this update (0=every frame)
-     * @param {number} [count=0] number of times to run this update (0=infinite)
-     * @return {object} entry - used to remove or change the parameters of the update
-     */
-    // interval(callback, time, count)
-
-    /**
-     * adds a one-time callback to the loop
-     * @inherited from yy-loop
-     * @param {function} callback
-     * @param {number} time in milliseconds to call this update
-     * @return {object} entry - used to remove or change the parameters of the update
-     */
-    // timeout(callback, time)
-
-    /**
-     * remove a callback from the loop
-     * @inherited from yy-loop
-     * @param {object} entry - returned by add()
-     */
-    // remove(entry)
-
-    /**
-     * @inherited from yy-loop
-     * removes all callbacks from the loop
-     */
-    // removeAll()
-
-    /**
-     * @inherited from yy-loop
-     * @type {number} count of all animations
-     */
-    // get count()
-
-    /**
-     * @inherited from yy-loop
-     * @type {number} count of running animations
-     */
-    // get countRunning()
+    stop()
+    {
+        this.loop.stop()
+    }
 }
 
 module.exports = Renderer
-},{"exists":8,"pixi.js":336,"yy-fps":390,"yy-loop":393}],399:[function(require,module,exports){
+},{"exists":8,"pixi.js":336,"yy-fps":390,"yy-loop":392}],396:[function(require,module,exports){
 
-},{}],400:[function(require,module,exports){
+},{}],397:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -62272,7 +62430,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":401}],401:[function(require,module,exports){
+},{"_process":398}],398:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -62458,7 +62616,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],402:[function(require,module,exports){
+},{}],399:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -62995,7 +63153,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],403:[function(require,module,exports){
+},{}],400:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -63081,7 +63239,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],404:[function(require,module,exports){
+},{}],401:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -63168,13 +63326,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],405:[function(require,module,exports){
+},{}],402:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":403,"./encode":404}],406:[function(require,module,exports){
+},{"./decode":400,"./encode":401}],403:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -63908,7 +64066,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":407,"punycode":402,"querystring":405}],407:[function(require,module,exports){
+},{"./util":404,"punycode":399,"querystring":402}],404:[function(require,module,exports){
 'use strict';
 
 module.exports = {
