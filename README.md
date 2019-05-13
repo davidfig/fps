@@ -1,13 +1,9 @@
 # yy-fps
-Yet another FPS indicator with graph
+Yet another vanilla FPS indicator with graph
 
 ## features
 * simple one call per loop
 * fully customizeable and styleable
-
-## rationale
-
-My rationale, sadly, is that the existing npm libraries either did not have live demos or did not support modules. Totally worth an afternoon of work in terms of enjoyment.
 
 ## installation
 
@@ -78,4 +74,4 @@ https://davidfig.github.io/fps/
 ```
 ## License  
 MIT License  
-(c) 2017 [YOPEY YOPEY LLC](https://yopeyopey.com/) by [David Figatner](https://twitter.com/yopey_yopey/)
+(c) 2019 [YOPEY YOPEY LLC](https://yopeyopey.com/) by [David Figatner](https://twitter.com/yopey_yopey/)
