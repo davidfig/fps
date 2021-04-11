@@ -61,89 +61,70 @@
 				<a href="#yy-fps" id="yy-fps" style="color: inherit; text-decoration: none;">
 					<h1>yy-fps</h1>
 				</a>
-				<p>Yet another vanilla FPS indicator with graph</p>
+				<p>A vanilla, easy-to-use FPS meter with colored graph and no dependencies or separate CSS files</p>
 				<a href="#features" id="features" style="color: inherit; text-decoration: none;">
-					<h2>features</h2>
+					<h2>Features</h2>
 				</a>
 				<ul>
+					<li>vanilla javascript written in typescript</li>
 					<li>simple one call per loop</li>
-					<li>fully customizeable and styleable</li>
+					<li>no dependencies</li>
+					<li>no CSS files required (styles can be changed by passing a style object)</li>
+					<li>placement in any corner</li>
+					<li>restyle any part</li>
+					<li>toggle the meter on or off</li>
+				</ul>
+				<a href="#new-v2" id="new-v2" style="color: inherit; text-decoration: none;">
+					<h2>New v2</h2>
+				</a>
+				<ul>
+					<li>rewrote entire codebase in typescript with same functionality as v1</li>
+					<li>improved demo</li>
+					<li>improved packaging</li>
 				</ul>
 				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
-					<h2>installation</h2>
+					<h2>Installation</h2>
 				</a>
 				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">i</span><span style="color: #000000"> </span><span style="color: #001080">yy</span><span style="color: #000000">-</span><span style="color: #001080">fps</span>
+
+<span style="color: #001080">or</span>
+
+<span style="color: #001080">copy</span><span style="color: #000000"> </span><span style="color: #001080">the</span><span style="color: #000000"> </span><span style="color: #001080">dist</span><span style="color: #000000">/</span><span style="color: #001080">fps</span><span style="color: #000000">.</span><span style="color: #001080">min</span><span style="color: #000000">.</span><span style="color: #001080">js</span><span style="color: #000000"> </span><span style="color: #001080">file</span><span style="color: #000000"> </span><span style="color: #001080">to</span><span style="color: #000000"> </span><span style="color: #001080">your</span><span style="color: #000000"> </span><span style="color: #001080">app</span><span style="color: #000000">, </span><span style="color: #001080">and</span><span style="color: #000000"> </span><span style="color: #001080">include</span><span style="color: #000000"> it:</span>
+<span style="color: #000000">&lt;</span><span style="color: #001080">script</span><span style="color: #000000"> </span><span style="color: #001080">src</span><span style="color: #000000">=</span><span style="color: #A31515">&quot;fps.min.js&quot;</span><span style="color: #000000">&gt;&lt;/</span><span style="color: #267F99">script</span><span style="color: #000000">&gt;</span>
 </code></pre>
 				<a href="#simple-example" id="simple-example" style="color: inherit; text-decoration: none;">
-					<h2>simple example</h2>
+					<h2>Simple Example</h2>
 				</a>
-				<pre><code><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">FPS</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;yy-fps&#039;</span><span style="color: #000000">)</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">Loop</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;yy-loop&#039;</span><span style="color: #000000">)</span>
-
+				<pre><code><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">FPS</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;yy-fps&#039;</span>
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">fps</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">FPS</span><span style="color: #000000">()</span>
 
-<span style="color: #008000">// start a loop</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">loop</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Loop</span><span style="color: #000000">()</span>
-<span style="color: #001080">loop</span><span style="color: #000000">.</span><span style="color: #795E26">add</span><span style="color: #000000">(</span><span style="color: #001080">update</span><span style="color: #000000">)</span>
-<span style="color: #001080">loop</span><span style="color: #000000">.</span><span style="color: #795E26">start</span><span style="color: #000000">()</span>
+<span style="color: #008000">// or if including the file directly:</span>
+<span style="color: #008000">// const fps = FPS.FPS()</span>
 
 <span style="color: #008000">// update function</span>
-<span style="color: #0000FF">function</span><span style="color: #000000"> </span><span style="color: #795E26">update</span><span style="color: #000000">()</span>
-<span style="color: #000000">{</span>
+<span style="color: #0000FF">function</span><span style="color: #000000"> </span><span style="color: #795E26">update</span><span style="color: #000000">() {</span>
+<span style="color: #000000">    </span><span style="color: #008000">// do stuff like rendering and dancing</span>
+
 <span style="color: #000000">    </span><span style="color: #001080">fps</span><span style="color: #000000">.</span><span style="color: #795E26">frame</span><span style="color: #000000">()</span>
 
-<span style="color: #000000">    </span><span style="color: #008000">// do stuff like rendering and dancing</span>
+<span style="color: #000000">    </span><span style="color: #795E26">requestAnimationFrame</span><span style="color: #000000">(</span><span style="color: #001080">update</span><span style="color: #000000">)</span>
 <span style="color: #000000">}</span>
+
+<span style="color: #795E26">update</span><span style="color: #000000">()</span>
 </code></pre>
 				<a href="#live-example" id="live-example" style="color: inherit; text-decoration: none;">
-					<h2>live example</h2>
+					<h2>Live Example</h2>
 				</a>
 				<p><a href="https://davidfig.github.io/fps/">https://davidfig.github.io/fps/</a></p>
-				<a href="#api" id="api" style="color: inherit; text-decoration: none;">
-					<h2>API</h2>
+				<a href="#documentation" id="documentation" style="color: inherit; text-decoration: none;">
+					<h2>Documentation</h2>
 				</a>
-				<pre><code class="language-js"><span style="color: #000000">    </span><span style="color: #008000">/**</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{object}</span><span style="color: #008000"> </span><span style="color: #001080">[options]</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{boolean}</span><span style="color: #008000"> </span><span style="color: #001080">[options.meter</span><span style="color: #000000">=</span><span style="color: #001080">true]</span><span style="color: #008000"> include a meter with the FPS</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{string}</span><span style="color: #008000"> </span><span style="color: #001080">[options.side</span><span style="color: #000000">=</span><span style="color: #001080">bottom-right]</span><span style="color: #008000"> include any combination of left/right and top/bottom</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{number}</span><span style="color: #008000"> </span><span style="color: #001080">[options.FPS</span><span style="color: #000000">=</span><span style="color: #001080">60]</span><span style="color: #008000"> desired FPS</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{number}</span><span style="color: #008000"> </span><span style="color: #001080">[options.tolerance</span><span style="color: #000000">=</span><span style="color: #001080">1]</span><span style="color: #008000"> minimum tolerance for fluctuations in FPS number</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{number}</span><span style="color: #008000"> </span><span style="color: #001080">[options.meterWidth</span><span style="color: #000000">=</span><span style="color: #001080">100]</span><span style="color: #008000"> width of meter div</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{number}</span><span style="color: #008000"> </span><span style="color: #001080">[options.meterHeight</span><span style="color: #000000">=</span><span style="color: #001080">25]</span><span style="color: #008000"> height of meter div</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{number}</span><span style="color: #008000"> </span><span style="color: #001080">[options.meterLineHeight</span><span style="color: #000000">=</span><span style="color: #001080">4]</span><span style="color: #008000"> height of meter line</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{styles[]}</span><span style="color: #008000"> </span><span style="color: #001080">[options.styles]</span><span style="color: #008000"> CSS styles to apply to the div (in javascript format)</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{styles[]}</span><span style="color: #008000"> </span><span style="color: #001080">[options.stylesFPS]</span><span style="color: #008000"> CSS styles to apply to the FPS text (in javascript format)</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{styles[]}</span><span style="color: #008000"> </span><span style="color: #001080">[options.stylesMeter]</span><span style="color: #008000"> CSS styles to apply to the FPS meter (in javascript format)</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@param</span><span style="color: #008000"> </span><span style="color: #267F99">{string}</span><span style="color: #008000"> </span><span style="color: #001080">[options.text</span><span style="color: #000000">=</span><span style="color: #001080">&quot; FPS&quot;]</span><span style="color: #008000"> change the text to the right of the FPS</span>
-<span style="color: #008000">     */</span>
-<span style="color: #000000">    </span><span style="color: #795E26">constructor</span><span style="color: #000000">(</span><span style="color: #001080">options</span><span style="color: #000000">)</span>
-
-<span style="color: #000000">    </span><span style="color: #008000">/**</span>
-<span style="color: #008000">     * change desired FPS</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@type</span><span style="color: #008000"> </span><span style="color: #267F99">{number}</span>
-<span style="color: #008000">     */</span>
-<span style="color: #000000">    </span><span style="color: #001080">get</span><span style="color: #000000"> </span><span style="color: #795E26">fps</span><span style="color: #000000">()</span>
-
-<span style="color: #000000">    </span><span style="color: #008000">/**</span>
-<span style="color: #008000">     * remove meter from DOM</span>
-<span style="color: #008000">     */</span>
-<span style="color: #000000">    </span><span style="color: #795E26">remove</span><span style="color: #000000">()</span>
-
-<span style="color: #000000">    </span><span style="color: #008000">/**</span>
-<span style="color: #008000">     * </span><span style="color: #0000FF">@type</span><span style="color: #008000"> </span><span style="color: #267F99">{boolean}</span><span style="color: #008000"> meter (the FPS graph) is on or off</span>
-<span style="color: #008000">     */</span>
-<span style="color: #000000">    </span><span style="color: #001080">get</span><span style="color: #000000"> </span><span style="color: #795E26">meter</span><span style="color: #000000">()</span>
-
-<span style="color: #000000">    </span><span style="color: #008000">/**</span>
-<span style="color: #008000">     * call this at the start of the frame to calculate FPS</span>
-<span style="color: #008000">     */</span>
-<span style="color: #000000">    </span><span style="color: #795E26">frame</span><span style="color: #000000">()</span>
-
-</code></pre>
+				<p><a href="https://davidfig.github.io/fps/jsdoc">https://davidfig.github.io/fps/jsdoc</a></p>
 				<a href="#license" id="license" style="color: inherit; text-decoration: none;">
 					<h2>License</h2>
 				</a>
-				<p>MIT License<br>(c) 2019 <a href="https://yopeyopey.com/">YOPEY YOPEY LLC</a> by <a href="https://twitter.com/yopey_yopey/">David Figatner</a></p>
+				<p>MIT License
+				(c) 2021 <a href="https://yopeyopey.com/">YOPEY YOPEY LLC</a> by <a href="https://twitter.com/yopey_yopey/">David Figatner</a></p>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">

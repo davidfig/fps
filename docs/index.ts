@@ -4,8 +4,10 @@ import { ease, Easing } from 'pixi-ease'
 import { clicked } from 'clicked'
 import 'fork-me-github'
 
-import { FPS } from '../fps'
 import { highlight } from './highlight'
+
+import { FPS } from '../fps'
+// import { FPS } from '../dist/fps.es' // test es packages
 
 // number of boxes
 const STARTING = 300
@@ -25,6 +27,9 @@ let renderer: PIXI.Renderer,
 
 function test() {
     fps = new FPS()
+
+    // to test bundled package
+    // fps = new (window as any).FPS.FPS()
 }
 
 function update() {
@@ -156,6 +161,9 @@ function moveChange() {
     const meter = fps.meter
     fps.remove()
     fps = new FPS({ meter, side: place })
+
+    // to test bundled package
+    // fps = new (window as any).FPS.FPS({ meter, side: place })
 }
 
 function change(amount: number) {

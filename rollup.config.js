@@ -14,8 +14,7 @@ export default [
                 presets: ['@babel/preset-env']
             }),
         ],
-        output:
-        {
+        output: {
             file: 'dist/fps.min.js',
             format: 'umd',
             name: 'FPS',
@@ -27,8 +26,7 @@ export default [
         plugins: [
             typescript()
         ],
-        output:
-        {
+        output: {
             file: 'dist/fps.es.js',
             format: 'esm',
             sourcemap: true
