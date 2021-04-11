@@ -1,77 +1,55 @@
 # yy-fps
-Yet another vanilla FPS indicator with graph
+A vanilla, easy-to-use FPS meter with colored graph and no dependencies or separate CSS files
 
-## features
+## Features
+* vanilla javascript written in typescript
 * simple one call per loop
-* fully customizeable and styleable
+* no dependencies
+* no CSS files required (styles can be changed by passing a style object)
+* placement in any corner
+* restyle any part
+* toggle the meter on or off
 
-## installation
+## New v2
+* rewrote entire codebase in typescript with same functionality as v1
+* improved demo
+* improved packaging
+
+## Installation
 
     npm i yy-fps
 
-## simple example
+    or
 
-    const FPS = require('yy-fps')
-    const Loop = require('yy-loop')
+    copy the dist/fps.min.js file to your app, and include it:
+    <script src="fps.min.js"></script>
 
+
+## Simple Example
+
+    import { FPS } from 'yy-fps'
     const fps = new FPS()
 
-    // start a loop
-    const loop = new Loop()
-    loop.add(update)
-    loop.start()
+    // or if including the file directly:
+    // const fps = FPS.FPS()
 
     // update function
-    function update()
-    {
+    function update() {
+        // do stuff like rendering and dancing
+
         fps.frame()
 
-        // do stuff like rendering and dancing
+        requestAnimationFrame(update)
     }
 
-## live example
+    update()
+
+## Live Example
 https://davidfig.github.io/fps/
 
-## API
-```js
-    /**
-     * @param {object} [options]
-     * @param {boolean} [options.meter=true] include a meter with the FPS
-     * @param {string} [options.side=bottom-right] include any combination of left/right and top/bottom
-     * @param {number} [options.FPS=60] desired FPS
-     * @param {number} [options.tolerance=1] minimum tolerance for fluctuations in FPS number
-     * @param {number} [options.meterWidth=100] width of meter div
-     * @param {number} [options.meterHeight=25] height of meter div
-     * @param {number} [options.meterLineHeight=4] height of meter line
-     * @param {styles[]} [options.styles] CSS styles to apply to the div (in javascript format)
-     * @param {styles[]} [options.stylesFPS] CSS styles to apply to the FPS text (in javascript format)
-     * @param {styles[]} [options.stylesMeter] CSS styles to apply to the FPS meter (in javascript format)
-     * @param {string} [options.text=" FPS"] change the text to the right of the FPS
-     */
-    constructor(options)
+## Documentation
+https://davidfig.github.io/fps/jsdoc
 
-    /**
-     * change desired FPS
-     * @type {number}
-     */
-    get fps()
-
-    /**
-     * remove meter from DOM
-     */
-    remove()
-
-    /**
-     * @type {boolean} meter (the FPS graph) is on or off
-     */
-    get meter()
-
-    /**
-     * call this at the start of the frame to calculate FPS
-     */
-    frame()
-
-```
-## License  
-MIT License  
-(c) 2019 [YOPEY YOPEY LLC](https://yopeyopey.com/) by [David Figatner](https://twitter.com/yopey_yopey/)
+## License
+MIT License
+(c) 2021 [YOPEY YOPEY LLC](https://yopeyopey.com/) by [David Figatner](https://twitter.com/yopey_yopey/)

@@ -1,0 +1,18 @@
+{
+  "source": {
+    "include": "code/",
+    "excludePattern": "(node_modules|lib|test)"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "opts": {
+    "destination": "docs/jsdoc"
+  },
+  "template": {
+    "readme": "./README.md",
+    "applicationName": "yy-fps",
+    "repository": "https://github.com/davidfig/fps/",
+    "outputSourceFiles": true
+  }
+}
