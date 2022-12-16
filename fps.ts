@@ -131,7 +131,7 @@ export class FPS {
             this.meterCanvas.style.width = this.options.meterWidth + 'px'
             this.meterCanvas.style.height = this.options.meterHeight + 'px'
             this.style(this.meterCanvas, this.options.stylesMeter)
-            this.meterContext = this.meterCanvas.getContext('2d')
+            this.meterContext = this.meterCanvas.getContext('2d', { willReadFrequently: true })
         }
         else {
             this.meterCanvas.style.display = 'block'

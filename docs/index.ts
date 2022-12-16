@@ -186,10 +186,11 @@ function change(amount: number) {
 function init() {
     renderer = new PIXI.Renderer({ backgroundAlpha: 0, width: window.innerWidth, height: window.innerHeight })
     stage = new PIXI.Container()
-    renderer.view.style.position = 'fixed'
-    renderer.view.style.top = '0'
-    renderer.view.style.left = '0'
-    document.body.appendChild(renderer.view)
+    const view = renderer.view as HTMLCanvasElement;
+    view.style.position = 'fixed'
+    view.style.top = '0'
+    view.style.left = '0'
+    document.body.appendChild(view)
 }
 
 function loop() {

@@ -17,7 +17,7 @@ export interface FPSOptions {
 }
 export declare const defaultFPSOptions: FPSOptions;
 /** Use #FFFFFF format for colors to ensure proper mixing of colors */
-export declare type Color = string;
+export type Color = string;
 export declare class FPS {
     options: FPSOptions;
     div: HTMLDivElement;

@@ -1,4 +1,4 @@
-/*! *****************************************************************************
+/******************************************************************************
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -132,7 +132,7 @@ var FPS = /** @class */ (function () {
             this.meterCanvas.style.width = this.options.meterWidth + 'px';
             this.meterCanvas.style.height = this.options.meterHeight + 'px';
             this.style(this.meterCanvas, this.options.stylesMeter);
-            this.meterContext = this.meterCanvas.getContext('2d');
+            this.meterContext = this.meterCanvas.getContext('2d', { willReadFrequently: true });
         }
         else {
             this.meterCanvas.style.display = 'block';
@@ -189,7 +189,7 @@ var FPS = /** @class */ (function () {
         var r = digit2(rgb1.r * percent + rgb2.r * (1 - percent));
         var g = digit2(rgb1.g * percent + rgb2.g * (1 - percent));
         var b = digit2(rgb1.b * percent + rgb2.b * (1 - percent));
-        return "#" + r + g + b;
+        return "#".concat(r).concat(g).concat(b);
     };
     FPS.prototype.meterUpdate = function (percent) {
         var data = this.meterContext.getImageData(0, 0, this.meterCanvas.width, this.meterCanvas.height);
