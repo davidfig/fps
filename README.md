@@ -31,7 +31,7 @@ A vanilla, easy-to-use FPS meter with colored graph and no dependencies or separ
     const fps = new FPS()
 
     // or if including the file directly:
-    // const fps = FPS.FPS()
+    // const fps = new FPS.FPS()
 
     // update function
     function update() {
