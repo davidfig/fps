@@ -10,9 +10,7 @@ export default
                 browser: true,
                 preferBuiltins: false,
             }),
-            commonjs({
-                namedExports: { 'resource-loader': ['Resource'] }
-            }),
+            commonjs(),
             typescript({
                 sourceMap: true,
             })
@@ -20,6 +18,7 @@ export default
         output: {
             file: 'docs/index.js',
             format: 'iife',
+            inlineDynamicImports: true,
             sourcemap: true,
         }
     }

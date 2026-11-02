@@ -11,9 +11,7 @@ export default
                 browser: true,
                 preferBuiltins: false,
             }),
-            commonjs({
-                namedExports: { 'resource-loader': ['Resource'] }
-            }),
+            commonjs(),
             typescript({
                 'esModuleInterop': true,
                 'skipLibCheck': true,
@@ -23,6 +21,7 @@ export default
         output: {
             file: 'docs/index.js',
             format: 'iife',
+            inlineDynamicImports: true,
             sourcemap: true,
         }
     }
