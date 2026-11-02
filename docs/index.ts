@@ -1,5 +1,4 @@
 import * as PIXI from 'pixi.js'
-import random from 'yy-random'
 import { ease, Easing } from 'pixi-ease'
 import { clicked } from 'clicked'
 import 'fork-me-github'
@@ -15,6 +14,12 @@ const DELTA = 500
 
 // how often to change when holding down arrows
 const INTERVAL = 50
+
+const random = {
+    range: (start: number, end: number) => Math.floor(Math.random() * (end - start + 1)) + start,
+    sign: () => Math.random() < 0.5 ? -1 : 1,
+    color: () => Math.floor(Math.random() * 0xffffff),
+}
 
 let renderer: PIXI.Renderer,
     stage: PIXI.Container,
@@ -183,10 +188,10 @@ function change(amount: number) {
     }
 }
 
-function init() {
-    renderer = new PIXI.Renderer({ backgroundAlpha: 0, width: window.innerWidth, height: window.innerHeight })
+async function init() {
+    renderer = await PIXI.autoDetectRenderer({ backgroundAlpha: 0, width: window.innerWidth, height: window.innerHeight })
     stage = new PIXI.Container()
-    const view = renderer.view as HTMLCanvasElement;
+    const view = renderer.canvas
     view.style.position = 'fixed'
     view.style.top = '0'
     view.style.left = '0'
@@ -199,9 +204,9 @@ function loop() {
     requestAnimationFrame(loop)
 }
 
-window.onload = function () {
+window.onload = async function () {
     test()
-    init()
+    await init()
     for (let i = 0; i < STARTING; i++) box()
     createCount()
     createMeter()
