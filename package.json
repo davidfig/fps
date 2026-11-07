@@ -1,6 +1,6 @@
 {
     "name": "yy-fps",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "A vanilla, easy-to-use FPS meter with colored graph and no dependencies or separate CSS files",
     "main": "dist/fps.min.js",
     "types": "@types/fps.d.ts",
