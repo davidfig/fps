@@ -5,7 +5,10 @@
     "main": "dist/fps.min.js",
     "types": "@types/fps.d.ts",
     "module": "dist/fps.es.js",
-    "files": ["dist", "@types"],
+    "files": [
+        "dist",
+        "@types"
+    ],
     "type": "module",
     "directories": {
         "doc": "docs"
@@ -14,7 +17,7 @@
         "start": "rollup -c rollup.dev.js --watch",
         "build": "rollup -c rollup.config.js",
         "build-demo": "rollup -c rollup.demo.js",
-        "declaration": "tsc --target ES5 --declaration --emitDeclarationOnly fps.ts --declarationDir @types",
+        "declaration": "tsc --ignoreConfig --strict false --target ES2017 --declaration --emitDeclarationOnly fps.ts --declarationDir @types",
         "docs": "typedoc --excludeProtected --out docs/jsdoc fps.ts",
         "prepublishOnly": "yarn build && yarn build-demo && yarn declaration && yarn docs"
     },
@@ -35,23 +38,22 @@
     },
     "homepage": "https://github.com/davidfig/fps#readme",
     "devDependencies": {
-        "@babel/core": "^7.20.5",
-        "@babel/preset-env": "^7.20.2",
-        "@rollup/plugin-babel": "^6.0.3",
-        "@rollup/plugin-commonjs": "^23.0.5",
-        "@rollup/plugin-node-resolve": "^15.0.1",
-        "@rollup/plugin-typescript": "^10.0.1",
+        "@babel/core": "^7.29.7",
+        "@babel/preset-env": "^7.29.7",
+        "@rollup/plugin-babel": "^7.1.0",
+        "@rollup/plugin-commonjs": "^29.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-terser": "^1.0.2",
+        "@rollup/plugin-typescript": "^12.3.1",
         "clicked": "^4.0.3",
         "fork-me-github": "^1.2.0",
-        "highlight.js": "^11.7.0",
+        "highlight.js": "^11.12.0",
         "pixi-ease": "^3.0.7",
-        "pixi.js": "^7.0.5",
-        "rollup": "^3.7.4",
-        "rollup-plugin-serve": "^2.0.2",
-        "rollup-plugin-terser": "^7.0.2",
-        "tslib": "^2.4.1",
-        "typedoc": "^0.23.22",
-        "typescript": "^4.9.4",
-        "yy-random": "^1.10.2"
+        "pixi.js": "^8.22.0",
+        "rollup": "^4.67.4",
+        "rollup-plugin-serve": "^3.0.0",
+        "tslib": "^2.9.1",
+        "typedoc": "^0.28.20",
+        "typescript": "^6.0.3"
     }
 }
